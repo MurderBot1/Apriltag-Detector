@@ -19,38 +19,38 @@ This document outlines the architecture and implementation plan for a high-perfo
 ### 1.2 Component Diagram
 
 ```
-┌─────────────────────────────────────────────────────────────────┐
-│                        LAUNCHER (Main Process)                      │
-│  - Process Manager                                                  │
-│  - Configuration Loader                                            │
-│  - System Monitor                                                  │
-│  - Logger Initializer                                              │
-└─────────────────────────────────────────────────────────────────┘
-                              │
-                              ▼
-┌─────────────┐ ┌─────────────┐ ┌─────────────┐ ┌─────────────┐
-│  Camera 1    │ │  Camera 2    │ │  Camera N    │ │   Web UI    │
-│  Process     │ │  Process     │ │  Process     │ │   Process    │
-└──────┬──────┘ └──────┬──────┘ └──────┬──────┘ └──────┬──────┘
-       │               │               │              │
-       ▼               ▼               ▼              ▼
-┌─────────────────────────────────────────────────────────────────┐
-│                        NT4 COMMUNICATION BUS                        │
-│  - Custom NT4 Library                                              │
-│  - Topic-based publish/subscribe                                   │
-│  - Robot Data Exchange                                             │
-└─────────────────────────────────────────────────────────────────┘
-       │               │               │              │
-       ▼               ▼               ▼              │
-┌─────────────┐ ┌─────────────┐ ┌─────────────┐        │
-│  Pose Finder │ │  Pose Finder │ │  Pose Finder │        │
-│  Process     │ │  Process     │ │  Process     │        │
-└─────────────┘ └─────────────┘ └─────────────┘        │
-                                                      ▼
-                                              ┌─────────────┐
-                                              │   External  │
-                                              │   Robot     │
-                                              └─────────────┘
++-------------------------------------------------------------+
+|                        LAUNCHER (Main Process)               |
+|  - Process Manager                                          |
+|  - Configuration Loader                                    |
+|  - System Monitor                                          |
+|  - Logger Initializer                                      |
++-------------------------------------------------------------+
+                              |
+                              v
++------------+ +------------+ +------------+ +------------+
+| Camera 1   | | Camera 2   | | Camera N   | |   Web UI   |
+| Process    | | Process    | | Process    | |   Process   |
++-----+------+ +-----+------+ +-----+------+ +-----+------+
+      |              |              |             |
+      v              v              v             v
++-------------------------------------------------------------+
+|                        NT4 COMMUNICATION BUS                 |
+|  - Custom NT4 Library                                      |
+|  - Topic-based publish/subscribe                           |
+|  - Robot Data Exchange                                     |
++-------------------------------------------------------------+
+      |              |              |             |
+      v              v              v             |
++------------+ +------------+ +------------+        |
+| Pose Finder| | Pose Finder| | Pose Finder|        |
+| Process    | | Process    | | Process    |        |
++------------+ +------------+ +------------+        |
+                                                     v
+                                             +------------+
+                                             |   External  |
+                                             |   Robot     |
+                                             +------------+
 ```
 
 ---
@@ -59,118 +59,119 @@ This document outlines the architecture and implementation plan for a high-perfo
 
 ```
 Apriltag-Detector/
-├── Plan.md                           # This document
-├── README.md                         # Project overview
-├── .gitignore                        # Git ignore rules
-├── CMakeLists.txt                    # Root CMake configuration
-│
-├── cmake/                            # CMake modules and toolchain files
-│   ├── CrossCompileARM.cmake         # ARM cross-compilation
-│   ├── WindowsToolchain.cmake        # Windows-specific toolchain
-│   ├── LinuxToolchain.cmake          # Linux-specific toolchain
-│   └── MacToolchain.cmake            # macOS-specific toolchain
-│
-├── src/                              # Source code
-│   ├── common/                       # Shared libraries
-│   │   ├── logging/                  # Internal logging system
-│   │   │   ├── Logger.hpp            # Logger interface
-│   │   │   ├── Logger.cpp            # Logger implementation
-│   │   │   └── FileSink.hpp          # File output sink
-│   │   │
-│   │   ├── config/                   # Configuration system
-│   │   │   ├── ConfigManager.hpp     # Config loading/management
-│   │   │   ├── ConfigWatcher.hpp     # File change detection
-│   │   │   ├── JsonConfig.hpp        # JSON config parser
-│   │   │   └── schema/               # Config schemas
-│   │   │
-│   │   ├── ipc/                      # Inter-process communication
-│   │   │   ├── ProcessManager.hpp    # Process lifecycle management
-│   │   │   ├── RestartPolicy.hpp     # Self-healing policies
-│   │   │   └── HealthCheck.hpp       # Component health monitoring
-│   │   │
-│   │   ├── camera/                   # Camera abstraction layer
-│   │   │   ├── CameraInterface.hpp   # Abstract camera interface
-│   │   │   ├── V4L2Camera.hpp        # Linux V4L2 implementation
-│   │   │   ├── WMFCamera.hpp         # Windows Media Foundation
-│   │   │   ├── AVCaptureCamera.hpp   # macOS AVFoundation
-│   │   │   └── CameraFactory.hpp     # Factory pattern for camera creation
-│   │   │
-│   │   ├── nt4/                      # Custom NT4 Library
-│   │   │   ├── NT4Client.hpp         # NT4 client implementation
-│   │   │   ├── NT4Publisher.hpp      # Data publishing
-│   │   │   ├── NT4Subscriber.hpp     # Data subscription
-│   │   │   └── NT4Types.hpp          # Type definitions
-│   │   │
-│   │   └── utils/                    # Utilities
-│   │       ├── Platform.hpp          # Platform detection/abstraction
-│   │       ├── FileSystem.hpp        # Cross-platform filesystem
-│   │       └── TimeUtils.hpp          # Timing utilities
-│   │
-│   ├── launcher/                     # Main launcher program
-│   │   ├── main.cpp                  # Entry point
-│   │   ├── Launcher.hpp              # Launcher class
-│   │   └── SystemMonitor.hpp         # System health monitoring
-│   │
-│   ├── camera_detector/             # AprilTag detector per camera
-│   │   ├── main.cpp                  # Detector entry point
-│   │   ├── AprilTagDetector.hpp      # Detector implementation
-│   │   ├── TagDetection.cpp          # Detection algorithm
-│   │   └── DetectorConfig.hpp        # Detector-specific config
-│   │
-│   ├── pose_finder/                  # Pose estimation
-│   │   ├── main.cpp                  # Pose finder entry point
-│   │   ├── PoseEstimator.hpp         # Pose calculation
-│   │   ├── PoseSolver.hpp            # PnP solver
-│   │   └── PoseConfig.hpp            # Pose configuration
-│   │
-│   └── web_ui/                       # Web configuration interface
-│       ├── main.cpp                  # Web server entry point
-│       ├── WebServer.hpp             # HTTP server
-│       ├── StreamHandler.hpp         # Camera stream serving
-│       ├── ConfigAPI.hpp             # REST API for configuration
-│       └── web/                      # Web assets
-│           ├── index.html            # Main page
-│           ├── config.html           # Configuration page
-│           ├── stream.html           # Stream viewer
-│           ├── css/                  # Stylesheets
-│           └── js/                   # JavaScript
-│
-├── config/                           # Configuration files
-│   ├── system.json                   # System-wide configuration
-│   ├── cameras/                      # Per-camera configurations
-│   │   ├── camera_0.json             # Camera 0 config (intrinsics/extrinsics)
-│   │   ├── camera_1.json             # Camera 1 config
-│   │   └── ...
-│   └── web.json                      # Web server configuration
-│
-├── scripts/                          # Utility scripts
-│   ├── launch.sh                     # Linux/macOS launch script
-│   ├── launch.bat                    # Windows launch script
-│   ├── build_arm.sh                  # ARM build script
-│   └── generate_config.py            # Config generator
-│
-├── build/                            # Build output (gitignored)
-│   ├── linux_x64/                    # Linux x86_64 binaries
-│   ├── linux_arm/                    # Linux ARM binaries
-│   ├── windows_x64/                  # Windows x86_64 binaries
-│   ├── windows_arm/                  # Windows ARM binaries
-│   ├── mac_x64/                      # macOS x86_64 binaries
-│   └── mac_arm/                      # macOS ARM binaries
-│
-├── logs/                             # Log files
-│   └── <launch_time>/                # Timestamped log directory
-│       └── system/                   # System logs
-│           ├── launcher.log          # Launcher process log
-│           ├── camera_0.log          # Camera 0 detector log
-│           ├── camera_1.log          # Camera 1 detector log
-│           ├── pose_finder_0.log     # Pose finder log
-│           ├── web_ui.log            # Web UI log
-│           └── system_monitor.log    # System monitor log
-│
-└── third_party/                      # Third-party dependencies
-    ├── apriltag/                     # AprilTag library
-    ├── opencv/                       # OpenCV (optional, for image processing)
-    └── nlohmann_json/                # JSON library
++-- Plan.md                           # This document
++-- README.md                         # Project overview
++-- .gitignore                        # Git ignore rules
++-- CMakeLists.txt                    # Root CMake configuration
+|
++-- cmake/                            # CMake modules and toolchain files
+|   +-- CrossCompileARM.cmake         # ARM cross-compilation
+|   +-- WindowsToolchain.cmake        # Windows-specific toolchain
+|   +-- LinuxToolchain.cmake          # Linux-specific toolchain
+|   +-- MacToolchain.cmake            # macOS-specific toolchain
+|
++-- src/                              # Source code
+|   +-- common/                       # Shared libraries
+|   |   +-- logging/                  # Internal logging system
+|   |   |   +-- Logger.hpp            # Logger interface
+|   |   |   +-- Logger.cpp            # Logger implementation
+|   |   |   +-- FileSink.hpp          # File output sink
+|   |   |
+|   |   +-- config/                   # Configuration system
+|   |   |   +-- GlobalConfig.hpp      # Global constants (NEW)
+|   |   |   +-- ConfigManager.hpp     # Config loading/management
+|   |   |   +-- ConfigWatcher.hpp     # File change detection
+|   |   |   +-- JsonConfig.hpp        # JSON config parser
+|   |   |   +-- schema/               # Config schemas
+|   |   |
+|   |   +-- ipc/                      # Inter-process communication
+|   |   |   +-- ProcessManager.hpp    # Process lifecycle management
+|   |   |   +-- RestartPolicy.hpp     # Self-healing policies
+|   |   |   +-- HealthCheck.hpp       # Component health monitoring
+|   |   |
+|   |   +-- camera/                   # Camera abstraction layer
+|   |   |   +-- CameraInterface.hpp   # Abstract camera interface
+|   |   |   +-- V4L2Camera.hpp        # Linux V4L2 implementation
+|   |   |   +-- WMFCamera.hpp         # Windows Media Foundation
+|   |   |   +-- AVCaptureCamera.hpp   # macOS AVFoundation
+|   |   |   +-- CameraFactory.hpp     # Factory pattern for camera creation
+|   |   |
+|   |   +-- nt4/                      # Custom NT4 Library
+|   |   |   +-- NT4Client.hpp         # NT4 client implementation
+|   |   |   +-- NT4Publisher.hpp      # Data publishing
+|   |   |   +-- NT4Subscriber.hpp     # Data subscription
+|   |   |   +-- NT4Types.hpp          # Type definitions
+|   |   |
+|   |   +-- utils/                    # Utilities
+|   |       +-- Platform.hpp          # Platform detection/abstraction
+|   |       +-- FileSystem.hpp        # Cross-platform filesystem
+|   |       +-- TimeUtils.hpp          # Timing utilities
+|   |
+|   +-- launcher/                     # Main launcher program
+|   |   +-- main.cpp                  # Entry point
+|   |   +-- Launcher.hpp              # Launcher class
+|   |   +-- SystemMonitor.hpp         # System health monitoring
+|   |
+|   +-- camera_detector/             # AprilTag detector per camera
+|   |   +-- main.cpp                  # Detector entry point
+|   |   +-- AprilTagDetector.hpp      # Detector implementation
+|   |   +-- TagDetection.cpp          # Detection algorithm
+|   |   +-- DetectorConfig.hpp        # Detector-specific config
+|   |
+|   +-- pose_finder/                  # Pose estimation
+|   |   +-- main.cpp                  # Pose finder entry point
+|   |   +-- PoseEstimator.hpp         # Pose calculation
+|   |   +-- PoseSolver.hpp            # PnP solver
+|   |   +-- PoseConfig.hpp            # Pose configuration
+|   |
+|   +-- web_ui/                       # Web configuration interface
+|       +-- main.cpp                  # Web server entry point
+|       +-- WebServer.hpp             # HTTP server
+|       +-- StreamHandler.hpp         # Camera stream serving
+|       +-- ConfigAPI.hpp             # REST API for configuration
+|       +-- web/                      # Web assets
+|           +-- index.html            # Main page
+|           +-- config.html           # Configuration page
+|           +-- stream.html           # Stream viewer
+|           +-- css/                  # Stylesheets
+|           +-- js/                   # JavaScript
+|
++-- config/                           # Configuration files
+|   +-- system.json                   # System-wide configuration
+|   +-- cameras/                      # Per-camera configurations
+|   |   +-- camera_0.json             # Camera 0 config
+|   |   +-- camera_1.json             # Camera 1 config
+|   |   +-- ...
+|   +-- web.json                      # Web server configuration
+|
++-- scripts/                          # Utility scripts
+|   +-- launch.sh                     # Linux/macOS launch script
+|   +-- launch.bat                    # Windows launch script
+|   +-- build_arm.sh                  # ARM build script
+|   +-- generate_config.py            # Config generator
+|
++-- build/                            # Build output (gitignored)
+|   +-- linux_x64/                    # Linux x86_64 binaries
+|   +-- linux_arm/                    # Linux ARM binaries
+|   +-- windows_x64/                  # Windows x86_64 binaries
+|   +-- windows_arm/                  # Windows ARM binaries
+|   +-- mac_x64/                      # macOS x86_64 binaries
+|   +-- mac_arm/                      # macOS ARM binaries
+|
++-- logs/                             # Log files
+|   +-- <launch_time>/                # Timestamped log directory
+|       +-- system/                   # System logs
+|           +-- launcher.log          # Launcher process log
+|           +-- camera_0.log          # Camera 0 detector log
+|           +-- camera_1.log          # Camera 1 detector log
+|           +-- pose_finder_0.log     # Pose finder log
+|           +-- web_ui.log            # Web UI log
+|           +-- system_monitor.log    # System monitor log
+|
++-- third_party/                      # Third-party dependencies
+    +-- apriltag/                     # AprilTag library
+    +-- opencv/                       # OpenCV (optional)
+    +-- nlohmann_json/                # JSON library
 ```
 
 ---
@@ -184,6 +185,7 @@ Apriltag-Detector/
 **Responsibilities**:
 - Parse system configuration
 - Initialize logging system
+- Initialize GlobalConfig (global constants)
 - Start all camera detector processes
 - Start pose finder processes
 - Start web UI process
@@ -197,6 +199,9 @@ Apriltag-Detector/
 int main(int argc, char* argv[]) {
     // Initialize logging
     Logger::initialize("./logs/<timestamp>/system/");
+    
+    // Initialize global constants from config
+    GlobalConfig::initialize("config/system.json");
     
     // Load configuration
     auto config = ConfigManager::load("config/system.json");
@@ -229,9 +234,9 @@ int main(int argc, char* argv[]) {
 - Initialize specific camera using system API
 - Configure camera settings (exposure, brightness, etc.)
 - Capture frames
-- Run AprilTag detection
-- Publish detection results via NT4
-- Stream raw and processed frames
+- Run AprilTag detection using GlobalConfig tag family
+- Send raw detections to pose finder via IPC (NOT via NT4)
+- Stream raw and processed frames (local only, NOT published)
 
 **Configuration File** (`config/cameras/camera_<n>.json`):
 ```json
@@ -259,16 +264,6 @@ int main(int argc, char* argv[]) {
   "extrinsics": {
     "translation": [0.0, 0.0, 0.0],
     "rotation": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
-  },
-  "apriltag": {
-    "family": "tag36h11",
-    "min_size": 0.1,
-    "max_size": 10.0,
-    "detect_threshold": 0.5
-  },
-  "nt4": {
-    "publish_topic": "/camera_0/detections",
-    "robot_address": "10.0.0.2"
   }
 }
 ```
@@ -281,17 +276,19 @@ int main(int argc, char* argv[]) {
 | Windows | WMF (Windows Media Foundation) | `WMFCamera.hpp` |
 | macOS | AVFoundation | `AVCaptureCamera.hpp` |
 
-### 3.3 Pose Finder (Per-Camera Process)
+### 3.3 Pose Finder (Single Process for All Cameras)
 
-**Purpose**: Calculate robot pose from AprilTag detections.
+**Purpose**: Calculate robot pose from AprilTag detections from ALL cameras.
 
 **Responsibilities**:
-- Subscribe to detection data from camera detectors
+- Subscribe to detection data from ALL camera detectors via IPC
 - Apply pose estimation algorithm (PnP)
-- Publish calculated pose via NT4
+- Publish **ONLY** combined robot position via NT4
+- Publish **ONLY** detection count per camera via NT4
 - Handle multiple tags for robust pose estimation
+- Combine data from all cameras into single robot position
 
-**Configuration**: Shared with camera detector or separate pose config.
+**Configuration**: Uses GlobalConfig for tag parameters.
 
 ### 3.4 Web UI (Single Process)
 
@@ -299,10 +296,12 @@ int main(int argc, char* argv[]) {
 
 **Responsibilities**:
 - Host HTTP server on OS-specific port
-- Serve camera streams (raw and processed)
+- Serve camera streams (raw and processed) - LOCAL ONLY
 - Provide configuration UI
 - Display detection overlays
 - Show system status
+- Display combined robot position
+- Display detection counts per camera
 
 **OS-Specific Port Libraries**:
 - Use platform-specific optimal port selection
@@ -312,13 +311,17 @@ int main(int argc, char* argv[]) {
 
 **Endpoints**:
 - `GET /` - Main dashboard
-- `GET /stream/camera_<n>/raw` - Raw camera feed
-- `GET /stream/camera_<n>/processed` - Processed feed with detections
+- `GET /stream/camera_<n>/raw` - Raw camera feed (local)
+- `GET /stream/camera_<n>/processed` - Processed feed with detections (local)
 - `GET /config` - Configuration editor
 - `GET /api/cameras` - List cameras
 - `GET /api/cameras/<n>/config` - Get camera config
 - `POST /api/cameras/<n>/config` - Update camera config
+- `GET /api/globals` - Get global configuration
+- `POST /api/globals` - Update global configuration (tag family, etc.)
 - `GET /api/system/status` - System health status
+- `GET /api/robot/position` - Current combined robot position
+- `GET /api/cameras/<n>/detection_count` - Detection count for camera
 
 ### 3.5 Custom NT4 Library
 
@@ -326,16 +329,31 @@ int main(int argc, char* argv[]) {
 
 **Responsibilities**:
 - Establish connection to robot
-- Publish detection and pose data
+- Publish **ONLY** combined robot position and detection counts (per requirements)
 - Subscribe to robot data if needed
 - Handle connection retries
 - Manage topic lifecycle
+
+**Publishing Rules** (Per Requirements):
+- **DO NOT** publish individual tag detections
+- **DO NOT** publish raw camera frames
+- **PUBLISH**: Combined robot position from all cameras
+- **PUBLISH**: Number of detections per camera
 
 **Interface**:
 ```cpp
 class NT4Client {
 public:
     void connect(const std::string& address);
+    
+    // Publish combined robot position (from all cameras)
+    void publishCombinedRobotPosition(const std::vector<double>& position, 
+                                       const std::vector<double>& orientation);
+    
+    // Publish detection count per camera
+    void publishDetectionCount(int cameraId, int count);
+    
+    // Generic publish for future expansion
     void publish(const std::string& topic, const Data& data);
     void subscribe(const std::string& topic, Callback cb);
     void disconnect();
@@ -381,7 +399,6 @@ public:
     #define ARCH_ARM32 1
 #endif
 
-// String identifiers
 constexpr const char* getPlatformString() {
     #if PLATFORM_WINDOWS
         return "windows";
@@ -494,55 +511,130 @@ set(BUILD_DIR "${CMAKE_BINARY_DIR}/${PLATFORM}_${ARCH}")
 
 ## 5. Configuration System
 
-### 5.1 Configuration Hierarchy
+### 5.1 Global Constants
+
+**Purpose**: System-wide configuration that applies to all components. All values can be changed without redeployment via the web UI or by editing system.json.
+
+**GlobalConfig.hpp**:
+```cpp
+#pragma once
+
+#include <string>
+
+namespace GlobalConfig {
+    // AprilTag family - configurable without redeployment
+    extern std::string TAG_FAMILY;
+    
+    // Default values
+    constexpr const char* DEFAULT_TAG_FAMILY = "tag36h11";
+    
+    // Tag size in meters (can be overridden per-tag in known tags config)
+    extern double TAG_SIZE;
+    constexpr double DEFAULT_TAG_SIZE = 0.1651;
+    
+    // Detection parameters - all configurable at runtime
+    extern double MIN_TAG_SIZE;
+    constexpr double DEFAULT_MIN_TAG_SIZE = 0.05;
+    
+    extern double MAX_TAG_SIZE;
+    constexpr double DEFAULT_MAX_TAG_SIZE = 10.0;
+    
+    extern double DETECT_THRESHOLD;
+    constexpr double DEFAULT_DETECT_THRESHOLD = 0.5;
+    
+    // Initialize from system.json
+    void initialize(const std::string& configPath);
+    
+    // Hot-reload support - called when config file changes
+    void reload();
+    
+    // Get current configuration as JSON for web UI
+    std::string toJson() const;
+    
+    // Update from JSON (called from web UI)
+    void fromJson(const std::string& json);
+};
+```
+
+**system.json Global Settings**:
+```json
+{
+  "globals": {
+    "tag_family": "tag36h11",
+    "default_tag_size": 0.1651,
+    "min_tag_size": 0.05,
+    "max_tag_size": 10.0,
+    "detect_threshold": 0.5
+  },
+  "cameras": [...],
+  "web": {...},
+  "nt4": {...},
+  "logging": {...}
+}
+```
+
+### 5.2 Configuration Hierarchy
 
 ```
 System Configuration (system.json)
-├── cameras: [CameraConfig]
-│   ├── device_path
-│   ├── camera_type (v4l2/wmf/avfoundation)
-│   ├── resolution
-│   ├── fps
-│   └── ...
-├── pose_finders: [PoseConfig]
-├── web: WebConfig
-│   ├── port
-│   ├── bind_address
-│   └── ...
-├── nt4: NT4Config
-│   ├── robot_address
-│   ├── team_number
-│   └── ...
-└── logging: LogConfig
-    ├── log_level
-    ├── log_directory
-    └── rotation_policy
++-- globals: GlobalConfig
+|   +-- tag_family              # Tag family for ALL detectors
+|   +-- default_tag_size        # Default tag size in meters
+|   +-- min_tag_size            # Minimum detectable tag size
+|   +-- max_tag_size            # Maximum detectable tag size
+|   +-- detect_threshold        # Detection confidence threshold
+|
++-- cameras: [CameraConfig]
+|   +-- device_path
+|   +-- camera_type (v4l2/wmf/avfoundation)
+|   +-- resolution
+|   +-- fps
+|   +-- intrinsics
+|   +-- extrinsics
+|   +-- settings (exposure, brightness, etc.)
+|
++-- pose_finders: [PoseConfig]
++-- web: WebConfig
+|   +-- port
+|   +-- bind_address
+|   +-- enable_auth
+|
++-- nt4: NT4Config
+|   +-- robot_address
+|   +-- team_number
+|   +-- publish_rate
+|
++-- logging: LogConfig
+    +-- log_level
+    +-- log_directory
+    +-- rotation_policy
 
 Camera Configuration (cameras/camera_<n>.json)
-├── intrinsics
-│   ├── fx, fy
-│   ├── cx, cy
-│   └── distortion
-├── extrinsics
-│   ├── translation
-│   └── rotation
-├── camera_settings
-│   ├── exposure
-│   ├── brightness
-│   ├── contrast
-│   ├── saturation
-│   └── gain
-└── apriltag
-    ├── family
-    ├── min_size
-    ├── max_size
-    └── detect_threshold
++-- camera_id
++-- device_path
++-- camera_type
++-- resolution
++-- fps
++-- settings
+|   +-- exposure
+|   +-- brightness
+|   +-- contrast
+|   +-- saturation
+|   +-- gain
++-- intrinsics
+|   +-- fx, fy
+|   +-- cx, cy
+|   +-- distortion
++-- extrinsics
+    +-- translation
+    +-- rotation
 ```
 
-### 5.2 Hot Configuration
+### 5.3 Hot Configuration
 
 **Implementation Strategy**:
 - ConfigWatcher monitors config files for changes
+- On change, GlobalConfig::reload() is called automatically
 - On change, components receive configuration update events
 - Components apply new settings without restart (where possible)
 - For settings requiring restart, ProcessManager handles graceful restart
@@ -616,7 +708,6 @@ public:
     static void error(const std::string& msg);
     static void critical(const std::string& msg);
     
-    // With format
     template<typename... Args>
     static void trace(const std::string& fmt, Args... args);
     template<typename... Args>
@@ -627,21 +718,24 @@ public:
 // Macro for file:line
 #define LOG_TRACE(msg) Logger::trace("[%s:%d] %s", __FILE__, __LINE__, msg)
 #define LOG_DEBUG(msg) Logger::debug("[%s:%d] %s", __FILE__, __LINE__, msg)
-// ... etc
+#define LOG_INFO(msg) Logger::info("[%s:%d] %s", __FILE__, __LINE__, msg)
+#define LOG_WARN(msg) Logger::warn("[%s:%d] %s", __FILE__, __LINE__, msg)
+#define LOG_ERROR(msg) Logger::error("[%s:%d] %s", __FILE__, __LINE__, msg)
+#define LOG_CRITICAL(msg) Logger::critical("[%s:%d] %s", __FILE__, __LINE__, msg)
 ```
 
 ### 6.2 Log Directory Structure
 
 ```
 logs/
-└── 2024-01-15_14-30-00/           # Launch timestamp
-    └── system/
-        ├── launcher_<pid>.log
-        ├── camera_detector_0_<pid>.log
-        ├── camera_detector_1_<pid>.log
-        ├── pose_finder_0_<pid>.log
-        ├── pose_finder_1_<pid>.log
-        └── web_ui_<pid>.log
++-- 2024-01-15_14-30-00/           # Launch timestamp
+    +-- system/
+        +-- launcher_<pid>.log
+        +-- camera_detector_0_<pid>.log
+        +-- camera_detector_1_<pid>.log
+        +-- pose_finder_<pid>.log
+        +-- web_ui_<pid>.log
+        +-- system_monitor.log
 ```
 
 ---
@@ -724,6 +818,7 @@ Each process sends periodic heartbeats to the launcher:
 | Config Updates | Filesystem + Watcher | std::filesystem |
 | Health Monitoring | Shared Memory / Sockets | Custom |
 | Stream Sharing | Shared Memory | Custom |
+| Raw Detections | Shared Memory / Sockets | Custom |
 | NT4 Data | Network Sockets | Custom NT4 |
 
 ### 8.2 Shared Memory for Camera Streams
@@ -745,12 +840,43 @@ public:
 
 ### 8.3 NT4 Communication Flow
 
+**Simplified per requirements - only publishing combined position and detection counts**:
+
 ```
-Camera Detector → NT4 Publish → Robot
-Camera Detector → NT4 Publish → Pose Finder
-Pose Finder → NT4 Publish → Robot
-Web UI → NT4 Subscribe ← Camera Detector
-Web UI → NT4 Subscribe ← Pose Finder
+Camera Detector -> (Raw detections via IPC) -> Pose Finder
+Pose Finder -> NT4 Publish -> Robot (Combined Position)
+Pose Finder -> NT4 Publish -> Robot (Detection Count per Camera)
+Web UI -> NT4 Subscribe <- Pose Finder (for display)
+```
+
+**Topic Structure**:
+- `/robot/position` - Combined robot position from all cameras (6D: x, y, z, roll, pitch, yaw)
+- `/robot/orientation` - Quaternion orientation (optional, separate topic)
+- `/cameras/<id>/detection_count` - Number of detections for camera <id>
+- `/system/status` - System health (optional)
+
+**NT4 Message Types for Robot Data**:
+
+```cpp
+// Combined robot position message
+struct RobotPositionMessage {
+    double timestamp;  // Unix timestamp with microseconds
+    double x;          // X position in meters
+    double y;          // Y position in meters
+    double z;          // Z position in meters
+    double roll;       // Roll in radians
+    double pitch;      // Pitch in radians
+    double yaw;        // Yaw in radians
+    double confidence; // 0.0 to 1.0
+    int32_t num_cameras_used; // Number of cameras contributing
+};
+
+// Detection count message
+struct DetectionCountMessage {
+    int32_t camera_id;
+    int32_t count;
+    double timestamp;
+};
 ```
 
 ---
@@ -761,18 +887,24 @@ Web UI → NT4 Subscribe ← Pose Finder
 
 ```
 Camera Frame
-    ▼
+    |
+    v
 Preprocessing (optional)
-    ▼
-AprilTag Detection
-    ▼
+    |
+    v
+AprilTag Detection (using GlobalConfig::TAG_FAMILY)
+    |
+    v
 Tag Decoding
-    ▼
-Detection Data + Frame
-    ▼
-Publish via NT4
-    ▼
-Stream Output (processed)
+    |
+    v
+Detection Data
+    |
+    v
+Send to Pose Finder via IPC (NOT published via NT4)
+    |
+    v
+Stream Output (processed) - LOCAL ONLY
 ```
 
 ### 9.2 Detection Data Structure
@@ -780,18 +912,21 @@ Stream Output (processed)
 ```cpp
 struct AprilTagDetection {
     int id;                     // Tag ID
-    double centerX, centerY;    // Image coordinates
-    double corners[4][2];       // Four corners
-    double pose[3];             // Translation (if solved)
-    double orientation[4];     // Quaternion (if solved)
-    double confidence;          // Detection confidence
-    uint64_t timestamp;         // Frame timestamp
+    double centerX, centerY;    // Image coordinates (pixels)
+    double corners[4][2];       // Four corners (x,y for each)
+    double pose[3];             // Translation relative to camera (if solved)
+    double orientation[4];     // Quaternion relative to camera (if solved)
+    double confidence;          // Detection confidence (0.0 to 1.0)
+    double tagSize;            // Detected tag size in meters
+    uint64_t timestamp;         // Frame timestamp (microseconds)
+    int cameraId;              // Which camera detected this
 };
 
 struct DetectionFrame {
     std::vector<AprilTagDetection> detections;
     CameraFrame frame;
     int cameraId;
+    uint64_t frameTimestamp;
 };
 ```
 
@@ -801,32 +936,44 @@ struct DetectionFrame {
 
 ### 10.1 Pose Solver
 
-**Input**: Multiple tag detections from a camera
-**Output**: Camera pose relative to tag field
+**Input**: Multiple tag detections from ALL cameras
+**Output**: Single combined robot position relative to field
 
 **Algorithm**:
-1. For each detected tag:
+1. Collect all detections from all cameras
+2. For each detected tag:
    - Get known tag pose in world coordinates
-   - Use camera intrinsics
-   - Solve PnP (Perspective-n-Point)
-2. Combine multiple tag poses using RANSAC or averaging
-3. Publish final pose
+   - Use camera intrinsics and extrinsics
+   - Solve PnP (Perspective-n-Point) for camera-to-tag transform
+3. Transform camera-to-tag to robot-to-tag using camera extrinsics
+4. Combine all tag poses using weighted averaging (by confidence)
+5. Publish final combined robot position via NT4
+6. Publish detection count per camera via NT4
 
 **PoseSolver.hpp**:
 ```cpp
 class PoseSolver {
 public:
     struct PoseResult {
-        std::vector<double> translation;  // [x, y, z]
+        std::vector<double> translation;  // [x, y, z] in meters
         std::vector<double> rotation;    // quaternion [w, x, y, z]
-        double confidence;
-        std::vector<int> usedTagIds;
+        std::vector<double> euler;       // [roll, pitch, yaw] in radians
+        double confidence;              // 0.0 to 1.0
+        std::vector<int> usedCameraIds; // Which cameras contributed
+        std::vector<int> usedTagIds;     // Which tags were used
     };
     
-    PoseResult solvePose(
-        const std::vector<AprilTagDetection>& detections,
-        const CameraIntrinsics& intrinsics,
+    // Process detections from all cameras
+    PoseResult solveCombinedPose(
+        const std::map<int, std::vector<AprilTagDetection>>& allDetections,
+        const std::map<int, CameraIntrinsics>& cameraIntrinsics,
+        const std::map<int, CameraExtrinsics>& cameraExtrinsics,
         const std::map<int, TagPose>& knownTagPoses
+    );
+    
+    // Get detection counts per camera
+    std::map<int, int> getDetectionCounts(
+        const std::map<int, std::vector<AprilTagDetection>>& allDetections
     );
 };
 ```
@@ -842,7 +989,7 @@ public:
         "translation": [0.0, 0.0, 0.0],
         "rotation": [1.0, 0.0, 0.0, 0.0]
       },
-      "size": 0.1651  // Tag size in meters
+      "size": 0.1651  // Tag size in meters (overrides GlobalConfig::TAG_SIZE)
     },
     {
       "id": 1,
@@ -886,15 +1033,15 @@ public:
 
 ### 11.2 Stream Handler
 
-**Efficient streaming of camera feeds**:
+**Efficient streaming of camera feeds (LOCAL ONLY)**:
 ```cpp
 class StreamHandler {
 public:
-    // MJPEG streaming
+    // MJPEG streaming - LOCAL ONLY, NOT published via NT4
     void handleRawStream(int cameraId, HttpResponse& response);
     void handleProcessedStream(int cameraId, HttpResponse& response);
     
-    // Snapshot
+    // Snapshot - LOCAL ONLY
     void handleSnapshot(int cameraId, bool processed, HttpResponse& response);
 };
 ```
@@ -911,6 +1058,11 @@ private:
     void handleGetCameras(HttpRequest& req, HttpResponse& res);
     void handleGetCameraConfig(HttpRequest& req, HttpResponse& res);
     void handlePostCameraConfig(HttpRequest& req, HttpResponse& res);
+    
+    // Global configuration endpoints
+    void handleGetGlobals(HttpRequest& req, HttpResponse& res);
+    void handlePostGlobals(HttpRequest& req, HttpResponse& res);
+    
     void handleGetSystemStatus(HttpRequest& req, HttpResponse& res);
 };
 ```
@@ -958,9 +1110,15 @@ public:
     bool subscribe(const std::string& topic, SubscribeCallback callback);
     void unsubscribe(const std::string& topic);
     
-    // Robot data
-    bool publishRobotPose(const std::vector<double>& pose);
-    bool publishTagDetections(int cameraId, const std::vector<AprilTagDetection>& detections);
+    // Robot data - ONLY these methods per requirements
+    // Publishes combined position from ALL cameras
+    bool publishCombinedRobotPosition(
+        const std::vector<double>& position, 
+        const std::vector<double>& orientation
+    );
+    
+    // Publishes detection count for a single camera
+    bool publishDetectionCount(int cameraId, int count);
     
     // Utility
     void run();  // Process network events
@@ -1056,26 +1214,33 @@ cmake --build . --config Release
 
 ```
 ApriltagDetector-v1.0.0-<platform>-<arch>.tar.gz / .zip
-├── bin/
-│   ├── launcher
-│   ├── camera_detector
-│   ├── pose_finder
-│   └── web_ui
-├── config/
-│   ├── system.json
-│   └── cameras/
-│       └── camera_0.json
-├── web/
-│   ├── index.html
-│   ├── config.html
-│   ├── stream.html
-│   ├── css/
-│   └── js/
-├── scripts/
-│   ├── launch.sh
-│   └── launch.bat
-├── README.md
-└── LICENSE
++-- bin/
+|   +-- launcher
+|   +-- camera_detector
+|   +-- pose_finder
+|   +-- web_ui
+|
++-- config/
+|   +-- system.json
+|   +-- cameras/
+|   |   +-- camera_0.json
+|   |   +-- camera_1.json
+|   |   +-- ...
+|   +-- tags.json              # Known tag positions
+|
++-- web/
+|   +-- index.html
+|   +-- config.html
+|   +-- stream.html
+|   +-- css/
+|   +-- js/
+|
++-- scripts/
+|   +-- launch.sh
+|   +-- launch.bat
+|
++-- README.md
++-- LICENSE
 ```
 
 ### 14.2 Installation
@@ -1098,7 +1263,7 @@ export PATH=$PATH:/opt/apriltag/bin
 - [ ] Set up project structure
 - [ ] Implement platform abstraction layer
 - [ ] Create logging system
-- [ ] Implement configuration system
+- [ ] Implement GlobalConfig with hot-reload
 - [ ] Build cross-platform CMake setup
 
 ### Phase 2: Core Components (Week 3-4)
@@ -1106,7 +1271,7 @@ export PATH=$PATH:/opt/apriltag/bin
 - [ ] Create V4L2 camera implementation
 - [ ] Create WMF camera implementation
 - [ ] Create AVFoundation camera implementation
-- [ ] Implement AprilTag detection
+- [ ] Implement AprilTag detection using GlobalConfig
 
 ### Phase 3: Communication (Week 5-6)
 - [ ] Implement custom NT4 library
@@ -1118,11 +1283,13 @@ export PATH=$PATH:/opt/apriltag/bin
 - [ ] Implement pose solver
 - [ ] Create pose finder service
 - [ ] Integrate with detection
+- [ ] Implement combined position calculation
 
 ### Phase 5: Web Interface (Week 8-9)
 - [ ] Implement HTTP server
-- [ ] Create stream handler
+- [ ] Create stream handler (local only)
 - [ ] Build configuration API
+- [ ] Add GlobalConfig editing via web UI
 - [ ] Design and implement web UI
 
 ### Phase 6: Integration & Testing (Week 10-12)
@@ -1176,15 +1343,16 @@ export PATH=$PATH:/opt/apriltag/bin
 
 - **Camera Processing**: Use hardware-accelerated APIs where available
 - **AprilTag Detection**: Use SIMD optimizations
-- **IPC**: Shared memory for high-bandwidth data (video streams)
+- **IPC**: Shared memory for high-bandwidth data (video streams, detections)
 - **NT4**: Batch small messages, use efficient serialization
-- **Web Streaming**: MJPEG for compatibility, H.264 for efficiency (optional)
+- **Web Streaming**: MJPEG for compatibility, efficient memory management
 
 ### 18.2 Resource Limits
 
 - Memory: < 500MB per camera process
 - CPU: < 50% per camera on target hardware
 - Latency: < 50ms detection + pose estimation
+- NT4 Messages: Only 2 types (position + counts), minimal bandwidth
 
 ---
 
@@ -1193,7 +1361,7 @@ export PATH=$PATH:/opt/apriltag/bin
 ### 19.1 Unit Tests
 
 - Platform abstraction layer
-- Configuration parsing
+- Configuration parsing (including GlobalConfig)
 - Logging system
 - NT4 message serialization
 - Pose solver
@@ -1204,6 +1372,7 @@ export PATH=$PATH:/opt/apriltag/bin
 - IPC between components
 - NT4 communication with mock robot
 - Web UI functionality
+- GlobalConfig hot-reload
 
 ### 19.3 System Tests
 
@@ -1211,6 +1380,7 @@ export PATH=$PATH:/opt/apriltag/bin
 - Multiple camera scenarios
 - Fault injection (kill processes)
 - Configuration changes during operation
+- Verify ONLY combined position and counts are published via NT4
 
 ### 19.4 Cross-Platform Tests
 
@@ -1225,15 +1395,21 @@ export PATH=$PATH:/opt/apriltag/bin
 - [ ] System runs on Windows, Linux, macOS (x86_64 and ARM)
 - [ ] All components are independent processes
 - [ ] Configuration can be changed without redeployment
+- [ ] **Global constants configurable** (including tag family type)
+- [ ] GlobalConfig::TAG_FAMILY used by all detectors
 - [ ] System automatically recovers from component crashes
 - [ ] Logs are written to `./logs/<launch_time>/system/`
 - [ ] Single launch file starts the entire system
 - [ ] Each camera has its own detector process
-- [ ] Detectors communicate with pose finders
+- [ ] Detectors communicate with pose finder via IPC
 - [ ] Each camera has individual configuration file
 - [ ] Web UI shows streams and allows configuration
+- [ ] Web UI allows editing GlobalConfig (tag family, etc.)
 - [ ] Uses system camera APIs (V4L2, WMF, AVFoundation)
-- [ ] Custom NT4 library publishes data to robot
+- [ ] Custom NT4 library publishes **ONLY** combined robot position and detection counts
+- [ ] **NO** individual tag detections published via NT4
+- [ ] **NO** raw camera frames published via NT4
+- [ ] **NO** per-camera poses published via NT4 (only combined)
 
 ---
 
@@ -1242,6 +1418,13 @@ export PATH=$PATH:/opt/apriltag/bin
 ### system.json
 ```json
 {
+  "globals": {
+    "tag_family": "tag36h11",
+    "default_tag_size": 0.1651,
+    "min_tag_size": 0.05,
+    "max_tag_size": 10.0,
+    "detect_threshold": 0.5
+  },
   "version": "1.0",
   "log_level": "INFO",
   "log_directory": "./logs",
@@ -1292,18 +1475,36 @@ export PATH=$PATH:/opt/apriltag/bin
   "extrinsics": {
     "translation": [0.0, 0.0, 0.0],
     "rotation": [1.0, 0.0, 0.0, 0.0, 1.0, 0.0, 0.0, 0.0, 1.0]
-  },
-  "apriltag": {
-    "family": "tag36h11",
-    "min_size": 0.1,
-    "max_size": 10.0,
-    "detect_threshold": 0.5
   }
+}
+```
+
+### tags.json
+```json
+{
+  "tags": [
+    {
+      "id": 0,
+      "pose": {
+        "translation": [0.0, 0.0, 0.0],
+        "rotation": [1.0, 0.0, 0.0, 0.0]
+      },
+      "size": 0.1651
+    },
+    {
+      "id": 1,
+      "pose": {
+        "translation": [1.0, 0.0, 0.0],
+        "rotation": [1.0, 0.0, 0.0, 0.0]
+      },
+      "size": 0.1651
+    }
+  ]
 }
 ```
 
 ---
 
-*Document Version: 1.0*
-*Last Updated: $(date)*
+*Document Version: 1.1*
+*Last Updated: $(date)
 *Author: System Architect*

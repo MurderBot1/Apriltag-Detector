@@ -19,7 +19,16 @@ set(COMMON_SOURCES
     # Camera
     camera/CameraFactory.cpp
     
-    # Platform-specific camera implementations
+    # NT4
+    nt4/NT4Client.cpp
+    nt4/NT4Publisher.cpp
+    nt4/NT4Subscriber.cpp
+    nt4/NT4Types.cpp
+    
+    # Utils
+    utils/FileSystem.cpp
+    utils/TimeUtils.cpp
+    utils/Platform.cpp
 )
 
 # Platform-specific sources
@@ -40,19 +49,6 @@ if(PLATFORM_MACOS)
         camera/AVCaptureCamera.cpp
     )
 endif()
-
-# NT4
-list(APPEND COMMON_SOURCES
-    nt4/NT4Client.cpp
-    nt4/NT4Publisher.cpp
-    nt4/NT4Subscriber.cpp
-)
-
-# Utils
-list(APPEND COMMON_SOURCES
-    utils/FileSystem.cpp
-    utils/TimeUtils.cpp
-)
 
 # Create common library
 add_library(common STATIC ${COMMON_SOURCES})
@@ -82,6 +78,7 @@ if(PLATFORM_WINDOWS)
         mfuuid
         propsys
         setupapi
+        ws2_32
     )
 endif()
 

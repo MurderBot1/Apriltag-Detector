@@ -1,0 +1,77 @@
+{
+  "name": "FRC_2022_RapidReact",
+  "description": "FRC 2022 Rapid React Field - Official Limelight FMap",
+  "field_size": [16.54, 8.02],
+  "tags": [
+    {
+      "id": 1,
+      "name": "Hub_1",
+      "pose": [8.27, 4.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 2,
+      "name": "Hub_2",
+      "pose": [8.27, 4.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 3,
+      "name": "Hub_3",
+      "pose": [8.27, 4.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 4,
+      "name": "Hub_4",
+      "pose": [8.27, 4.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 5,
+      "name": "Terminal_Red_1",
+      "pose": [0.0, 2.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 6,
+      "name": "Terminal_Red_2",
+      "pose": [0.0, 4.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 7,
+      "name": "Terminal_Red_3",
+      "pose": [0.0, 6.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 8,
+      "name": "Terminal_Blue_1",
+      "pose": [16.54, 2.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 9,
+      "name": "Terminal_Blue_2",
+      "pose": [16.54, 4.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 10,
+      "name": "Terminal_Blue_3",
+      "pose": [16.54, 6.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    }
+  ]
+}

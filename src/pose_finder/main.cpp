@@ -1,6 +1,7 @@
 #include "PoseSolver.hpp"
 #include "../common/config/GlobalConfig.hpp"
 #include "../common/config/ConfigManager.hpp"
+#include "../common/config/LimelightFMapLoader.hpp"
 #include "../common/nt4/NT4Client.hpp"
 #include "../common/nt4/NT4Publisher.hpp"
 #include "../common/ipc/SharedMemoryFrameBuffer.hpp"
@@ -20,6 +21,23 @@ void signalHandler(int signal) {
 }
 
 int main(int argc, char* argv[]) {
+    // Parse command line arguments
+    std::string fmapPath;
+    std::string fieldName;
+    
+    for (int i = 1; i < argc; ++i) {
+        std::string arg = argv[i];
+        if (arg == "--fmap" || arg == "-f") {
+            if (i + 1 < argc) {
+                fmapPath = argv[++i];
+            }
+        } else if (arg == "--field" || arg == "-F") {
+            if (i + 1 < argc) {
+                fieldName = argv[++i];
+            }
+        }
+    }
+    
     // Initialize logging
     Logger::initialize("./logs", "pose_finder", LogLevel::INFO);
     LOG_INFO("Starting pose finder");
@@ -27,31 +45,82 @@ int main(int argc, char* argv[]) {
     // Initialize global config
     GlobalConfig::initialize("config/system.json");
     
-    // Load tag configuration
-    ConfigManager::TagsConfig tagsConfig = 
-        ConfigManager::loadTagsConfig("config/tags.json");
-    
     // Create pose solver
     PoseSolver poseSolver;
     
-    // Add known tags
-    for (const auto& tag : tagsConfig.tags) {
-        TagPose tagPose;
-        tagPose.translation = tag.translation;
-        tagPose.rotation = tag.rotation;
-        tagPose.size = tag.size;
-        poseSolver.addKnownTag(tag.id, tagPose);
-        LOG_INFO_F("Added tag %d at (%f, %f, %f)", tag.id,
-                   tag.translation[0], tag.translation[1], tag.translation[2]);
+    // Load tag configuration
+    if (!fmapPath.empty()) {
+        // Load from custom FMap file
+        LimelightFMapLoader::FieldMap fieldMap = 
+            LimelightFMapLoader::loadFMap(fmapPath);
+        
+        auto tagConfigs = LimelightFMapLoader::toTagConfig(fieldMap);
+        for (const auto& pair : tagConfigs) {
+            TagPose tagPose;
+            tagPose.translation = pair.second.pose.translation;
+            tagPose.rotation = pair.second.pose.rotation;
+            tagPose.size = pair.second.size;
+            poseSolver.addKnownTag(pair.first, tagPose);
+            LOG_INFO_F("Added tag %d from FMap: %s", pair.first, fieldMap.name.c_str());
+        }
+    } else if (!fieldName.empty()) {
+        // Load built-in field map
+        auto builtInMaps = LimelightFMapLoader::getBuiltInFieldMaps();
+        auto it = builtInMaps.find(fieldName);
+        
+        if (it != builtInMaps.end()) {
+            auto tagConfigs = LimelightFMapLoader::toTagConfig(it->second);
+            for (const auto& pair : tagConfigs) {
+                TagPose tagPose;
+                tagPose.translation = pair.second.pose.translation;
+                tagPose.rotation = pair.second.pose.rotation;
+                tagPose.size = pair.second.size;
+                poseSolver.addKnownTag(pair.first, tagPose);
+                LOG_INFO_F("Added tag %d from built-in field: %s", 
+                          pair.first, it->first.c_str());
+            }
+        } else {
+            LOG_WARN_F("Unknown field name: %s, loading from tags.json", fieldName.c_str());
+            // Fall back to tags.json
+            ConfigManager::TagsConfig tagsConfig = 
+                ConfigManager::loadTagsConfig("config/tags.json");
+            
+            for (const auto& tag : tagsConfig.tags) {
+                TagPose tagPose;
+                tagPose.translation = tag.translation;
+                tagPose.rotation = tag.rotation;
+                tagPose.size = tag.size;
+                poseSolver.addKnownTag(tag.id, tagPose);
+            }
+        }
+    } else {
+        // Load from tags.json
+        ConfigManager::TagsConfig tagsConfig = 
+            ConfigManager::loadTagsConfig("config/tags.json");
+        
+        for (const auto& tag : tagsConfig.tags) {
+            TagPose tagPose;
+            tagPose.translation = tag.translation;
+            tagPose.rotation = tag.rotation;
+            tagPose.size = tag.size;
+            poseSolver.addKnownTag(tag.id, tagPose);
+            LOG_INFO_F("Added tag %d at (%f, %f, %f)", tag.id,
+                       tag.translation[0], tag.translation[1], tag.translation[2]);
+        }
     }
     
     // Create NT4 client and publisher
     NT4Client nt4Client;
     NT4Publisher nt4Publisher(&nt4Client);
     
+    // Load system config for NT4 settings
+    ConfigManager::SystemConfig systemConfig = 
+        ConfigManager::loadSystemConfig("config/system.json");
+    
     // Connect to NT4 server
-    if (!nt4Client.connect("127.0.0.1", 5810)) {
-        LOG_WARN("Failed to connect to NT4 server, will retry...");
+    if (!nt4Client.connect(systemConfig.nt4.robotAddress, systemConfig.nt4.publishRate)) {
+        LOG_WARN_F("Failed to connect to NT4 server at %s:%d, will retry...",
+                   systemConfig.nt4.robotAddress.c_str(), systemConfig.nt4.publishRate);
     }
     
     // Start NT4 client thread
@@ -94,7 +163,7 @@ int main(int argc, char* argv[]) {
                 // For now, we'll just note that we got a frame
                 
                 // For demo purposes, add a dummy detection
-                // In production, this would come from the camera detector
+                // In production, this would come from the camera detector via IPC
                 AprilTagDetection detection;
                 detection.id = 0;  // Tag ID
                 detection.centerX = frame.width / 2.0;
@@ -151,7 +220,7 @@ int main(int argc, char* argv[]) {
         // Try to reconnect if disconnected
         if (!nt4Client.isConnected()) {
             LOG_WARN("NT4 disconnected, attempting to reconnect...");
-            nt4Client.connect("127.0.0.1", 5810);
+            nt4Client.connect(systemConfig.nt4.robotAddress, systemConfig.nt4.publishRate);
         }
         
         TimeUtils::sleepMs(50);

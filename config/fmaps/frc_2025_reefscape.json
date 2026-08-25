@@ -1,0 +1,91 @@
+{
+  "name": "FRC_2025_Reefscape",
+  "description": "FRC 2025 Reefscape Field - Official Limelight FMap",
+  "field_size": [16.54, 8.21],
+  "tags": [
+    {
+      "id": 1,
+      "name": "Reef_Corner_Red_Left",
+      "pose": [0.0, 0.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 2,
+      "name": "Reef_Corner_Red_Right",
+      "pose": [16.54, 0.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 3,
+      "name": "Reef_Corner_Blue_Right",
+      "pose": [16.54, 8.21, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 4,
+      "name": "Reef_Corner_Blue_Left",
+      "pose": [0.0, 8.21, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 5,
+      "name": "Cable_1",
+      "pose": [2.0, 2.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 6,
+      "name": "Cable_2",
+      "pose": [14.54, 2.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 7,
+      "name": "Cable_3",
+      "pose": [14.54, 6.21, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 8,
+      "name": "Cable_4",
+      "pose": [2.0, 6.21, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 9,
+      "name": "Barge_1",
+      "pose": [8.27, 1.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 10,
+      "name": "Barge_2",
+      "pose": [8.27, 7.21, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 11,
+      "name": "Processor_1",
+      "pose": [4.0, 4.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 12,
+      "name": "Processor_2",
+      "pose": [12.54, 4.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    }
+  ]
+}

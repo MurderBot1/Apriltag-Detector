@@ -1,0 +1,91 @@
+{
+  "name": "FRC_2024_Crescendo",
+  "description": "FRC 2024 Crescendo Field - Official Limelight FMap",
+  "field_size": [16.46, 8.21],
+  "tags": [
+    {
+      "id": 1,
+      "name": "Stage_Left",
+      "pose": [0.0, 0.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 2,
+      "name": "Stage_Right",
+      "pose": [16.46, 0.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 3,
+      "name": "Amp_Red",
+      "pose": [1.0, 0.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 4,
+      "name": "Amp_Blue",
+      "pose": [15.46, 0.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 5,
+      "name": "Speaker_Red",
+      "pose": [0.0, 4.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 6,
+      "name": "Speaker_Blue",
+      "pose": [16.46, 4.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 7,
+      "name": "Mid_1",
+      "pose": [4.0, 2.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 8,
+      "name": "Mid_2",
+      "pose": [8.23, 2.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 9,
+      "name": "Mid_3",
+      "pose": [12.46, 2.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 10,
+      "name": "Mid_4",
+      "pose": [4.0, 6.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 11,
+      "name": "Mid_5",
+      "pose": [8.23, 6.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    },
+    {
+      "id": 12,
+      "name": "Mid_6",
+      "pose": [12.46, 6.0, 0.0],
+      "rotation": [1.0, 0.0, 0.0, 0.0],
+      "size": 0.1651
+    }
+  ]
+}

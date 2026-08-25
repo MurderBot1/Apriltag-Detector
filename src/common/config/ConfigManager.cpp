@@ -1,4 +1,5 @@
 #include "ConfigManager.hpp"
+#include "LimelightFMapLoader.hpp"
 #include "../utils/FileSystem.hpp"
 #include "FileSystem.hpp"
 #include <nlohmann/json.hpp>
@@ -33,6 +34,8 @@ ConfigManager::SystemConfig ConfigManager::loadSystemConfig(const std::string& p
     config.selfHealing.enabled = true;
     config.selfHealing.restartDelay = 1000;
     config.selfHealing.maxAttempts = 5;
+    config.fmap.defaultField = "FRC_2025_Reefscape";
+    config.fmap.fmapDirectory = "config/fmaps";
     
     std::string content = FileSystem::readFile(path);
     if (content.empty()) {
@@ -95,6 +98,16 @@ ConfigManager::SystemConfig ConfigManager::loadSystemConfig(const std::string& p
             }
             if (healing.contains("max_attempts")) {
                 config.selfHealing.maxAttempts = healing["max_attempts"].get<int>();
+            }
+        }
+        
+        if (j.contains("fmap")) {
+            json fmap = j["fmap"];
+            if (fmap.contains("default_field")) {
+                config.fmap.defaultField = fmap["default_field"].get<std::string>();
+            }
+            if (fmap.contains("fmap_directory")) {
+                config.fmap.fmapDirectory = fmap["fmap_directory"].get<std::string>();
             }
         }
         
@@ -285,6 +298,12 @@ std::map<int, ConfigManager::TagConfig> ConfigManager::loadTagConfig(const std::
     return tags;
 }
 
+std::map<int, ConfigManager::TagConfig> ConfigManager::loadFMapConfig(const std::string& path) {
+    // Load from Limelight FMap format
+    LimelightFMapLoader::FieldMap fieldMap = LimelightFMapLoader::loadFMap(path);
+    return LimelightFMapLoader::toTagConfig(fieldMap);
+}
+
 void ConfigManager::saveSystemConfig(const SystemConfig& config, const std::string& path) {
     json j;
     
@@ -310,6 +329,11 @@ void ConfigManager::saveSystemConfig(const SystemConfig& config, const std::stri
     healing["restart_delay"] = config.selfHealing.restartDelay;
     healing["max_attempts"] = config.selfHealing.maxAttempts;
     j["self_healing"] = healing;
+    
+    json fmap;
+    fmap["default_field"] = config.fmap.defaultField;
+    fmap["fmap_directory"] = config.fmap.fmapDirectory;
+    j["fmap"] = fmap;
     
     FileSystem::writeFile(path, j.dump(4));
 }

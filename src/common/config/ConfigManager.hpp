@@ -39,6 +39,11 @@ public:
             int restartDelay;
             int maxAttempts;
         } selfHealing;
+        
+        struct FMapConfig {
+            std::string defaultField;
+            std::string fmapDirectory;
+        } fmap;
     };
     
     /**
@@ -116,6 +121,13 @@ public:
     static std::map<int, TagConfig> loadTagConfig(const std::string& path = "config/tags.json");
     
     /**
+     * @brief Load tag configuration from Limelight FMap
+     * @param path Path to FMap JSON file
+     * @return Map of tag ID to TagConfig
+     */
+    static std::map<int, TagConfig> loadFMapConfig(const std::string& path);
+    
+    /**
      * @brief Save system configuration to file
      * @param config SystemConfig to save
      * @param path Path to save to
@@ -153,4 +165,18 @@ public:
 private:
     ConfigManager() = default;
     ~ConfigManager() = default;
+};
+
+/**
+ * @brief Tags configuration for loading from tags.json
+ */
+struct TagsConfig {
+    struct TagInfo {
+        int id;
+        std::vector<double> translation;  // [x, y, z]
+        std::vector<double> rotation;    // quaternion [w, x, y, z]
+        double size;
+    };
+    
+    std::vector<TagInfo> tags;
 };

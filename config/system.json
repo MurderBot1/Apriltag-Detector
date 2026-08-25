@@ -1,0 +1,11 @@
+{
+  "nt4Address": "127.0.0.1",
+  "nt4Port": 5810,
+  "numCameras": 2,
+  "logLevel": "INFO",
+  "webServerPort": 8080,
+  "streamWidth": 640,
+  "streamHeight": 480,
+  "streamQuality": 80,
+  "streamFps": 30
+}

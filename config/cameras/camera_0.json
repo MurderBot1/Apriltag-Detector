@@ -1,0 +1,24 @@
+{
+  "cameraId": 0,
+  "devicePath": "/dev/video0",
+  "cameraType": "v4l2",
+  "intrinsics": {
+    "fx": 800.0,
+    "fy": 800.0,
+    "cx": 320.0,
+    "cy": 240.0,
+    "width": 640,
+    "height": 480
+  },
+  "extrinsics": {
+    "translation": [0.0, 0.0, 0.0],
+    "rotation": [1.0, 0.0, 0.0, 0.0]
+  },
+  "settings": {
+    "exposure": 100,
+    "brightness": 50,
+    "contrast": 50,
+    "saturation": 50,
+    "gain": 1.0
+  }
+}

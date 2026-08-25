@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>AprilTag Detector - Configuration</title>
+    <link rel="stylesheet" href="/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>AprilTag Detector System</h1>
+            <p class="subtitle">Production-Grade Tag Detection and Pose Estimation</p>
+        </header>
+        
+        <nav class="tabs">
+            <button class="tab-button active" onclick="showTab('overview')">Overview</button>
+            <button class="tab-button" onclick="showTab('cameras')">Cameras</button>
+            <button class="tab-button" onclick="showTab('tags')">Tags</button>
+            <button class="tab-button" onclick="showTab('system')">System</button>
+            <button class="tab-button" onclick="showTab('streams')">Streams</button>
+        </nav>
+        
+        <main>
+            <!-- Overview Tab -->
+            <div id="overview" class="tab-content" style="display: block;">
+                <h2>System Overview</h2>
+                <div class="status-grid">
+                    <div class="status-card">
+                        <h3>Process Status</h3>
+                        <div id="process-status">
+                            <p>Loading...</p>
+                        </div>
+                    </div>
+                    <div class="status-card">
+                        <h3>Detection Statistics</h3>
+                        <div id="detection-stats">
+                            <p>Total Detections: <span id="total-detections">0</span></p>
+                            <p>Active Cameras: <span id="active-cameras">0</span></p>
+                        </div>
+                    </div>
+                    <div class="status-card">
+                        <h3>Robot Position</h3>
+                        <div id="robot-position">
+                            <p>X: <span id="position-x">0.00</span> m</p>
+                            <p>Y: <span id="position-y">0.00</span> m</p>
+                            <p>Z: <span id="position-z">0.00</span> m</p>
+                            <p>Yaw: <span id="position-yaw">0.00</span> deg</p>
+                            <p>Confidence: <span id="position-confidence">0.00</span></p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Cameras Tab -->
+            <div id="cameras" class="tab-content">
+                <h2>Camera Configuration</h2>
+                <div class="camera-list" id="camera-list">
+                    <p>Loading cameras...</p>
+                </div>
+            </div>
+            
+            <!-- Tags Tab -->
+            <div id="tags" class="tab-content">
+                <h2>Tag Configuration</h2>
+                <div class="tag-list" id="tag-list">
+                    <p>Loading tags...</p>
+                </div>
+            </div>
+            
+            <!-- System Tab -->
+            <div id="system" class="tab-content">
+                <h2>System Configuration</h2>
+                <div class="config-form">
+                    <div class="form-group">
+                        <label for="nt4-address">NT4 Server Address:</label>
+                        <input type="text" id="nt4-address" placeholder="127.0.0.1">
+                    </div>
+                    <div class="form-group">
+                        <label for="nt4-port">NT4 Server Port:</label>
+                        <input type="number" id="nt4-port" placeholder="5810">
+                    </div>
+                    <div class="form-group">
+                        <label for="log-level">Log Level:</label>
+                        <select id="log-level">
+                            <option value="TRACE">TRACE</option>
+                            <option value="DEBUG">DEBUG</option>
+                            <option value="INFO" selected>INFO</option>
+                            <option value="WARN">WARN</option>
+                            <option value="ERROR">ERROR</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tag-family">Tag Family:</label>
+                        <select id="tag-family">
+                            <option value="tag16h5">tag16h5</option>
+                            <option value="tag25h7">tag25h7</option>
+                            <option value="tag25h9">tag25h9</option>
+                            <option value="tag36h10">tag36h10</option>
+                            <option value="tag36h11" selected>tag36h11</option>
+                            <option value="tag41h12">tag41h12</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tag-size">Tag Size (m):</label>
+                        <input type="number" id="tag-size" step="0.001" placeholder="0.1651">
+                    </div>
+                    <button class="btn btn-primary" onclick="saveSystemConfig()">Save System Config</button>
+                    <button class="btn" onclick="reloadConfig()">Reload All Config</button>
+                </div>
+            </div>
+            
+            <!-- Streams Tab -->
+            <div id="streams" class="tab-content">
+                <h2>Camera Streams</h2>
+                <div class="stream-grid" id="stream-grid">
+                    <p>Loading streams...</p>
+                </div>
+            </div>
+        </main>
+        
+        <footer>
+            <p>AprilTag Detector System v1.0.0</p>
+        </footer>
+    </div>
+    
+    <script src="/js/app.js"></script>
+</body>
+</html>

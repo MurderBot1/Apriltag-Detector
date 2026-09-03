@@ -8,7 +8,7 @@ set(COMMON_SOURCES
     config/GlobalConfig.cpp
     config/ConfigManager.cpp
     config/ConfigWatcher.cpp
-    config/JsonConfig.cpp
+    config/LimelightFMapLoader.cpp
     
     # IPC
     ipc/ProcessManager.cpp

@@ -57,7 +57,6 @@ jobs:
           os: ubuntu-22.04
           target: linux
           arch: x64
-          compiler: native
           install_deps: "sudo apt update && sudo apt install -y build-essential cmake git"
           
         # Linux ARM64 (cross-compile from Linux)
@@ -65,7 +64,6 @@ jobs:
           os: ubuntu-22.04
           target: linux
           arch: arm64
-          compiler: aarch64-linux-gnu-g++
           install_deps: "sudo apt update && sudo apt install -y build-essential cmake git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu"
           
         # Windows x64 (cross-compile from Linux using MinGW)
@@ -73,7 +71,6 @@ jobs:
           os: ubuntu-22.04
           target: windows
           arch: x64
-          compiler: x86_64-w64-mingw32-g++
           install_deps: "sudo apt update && sudo apt install -y build-essential cmake git mingw-w64"
           
         # macOS x64 (native on Intel runner)
@@ -81,7 +78,6 @@ jobs:
           os: macos-13
           target: macos
           arch: x64
-          compiler: native
           install_deps: "brew update && brew install cmake"
           
         # macOS ARM64 (native on ARM runner)
@@ -89,7 +85,6 @@ jobs:
           os: macos-14
           target: macos
           arch: arm64
-          compiler: native
           install_deps: "brew update && brew install cmake"
     
     steps:
@@ -109,39 +104,39 @@ jobs:
           
           case "${{ matrix.platform }}" in
             linux-x64)
-              cmake .. \
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=linux \
                 -DCMAKE_SYSTEM_PROCESSOR=x86_64
               ;;
             linux-arm64)
-              cmake .. \
+              export CC=aarch64-linux-gnu-gcc
+              export CXX=aarch64-linux-gnu-g++
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=linux \
                 -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
-                -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
-                -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
                 -DCMAKE_CXX_FLAGS="-march=armv8-a" \
                 -DCMAKE_C_FLAGS="-march=armv8-a"
               ;;
             windows-x64)
-              cmake .. \
+              export CC=x86_64-w64-mingw32-gcc
+              export CXX=x86_64-w64-mingw32-g++
+              export RC=x86_64-w64-mingw32-windres
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=windows \
-                -DCMAKE_SYSTEM_NAME=Windows \
-                -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
-                -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
-                -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres
+                -DCMAKE_SYSTEM_NAME=Windows
               ;;
             macos-x64)
-              cmake .. \
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=macos \
                 -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
                 -DCMAKE_OSX_ARCHITECTURES=x86_64
               ;;
             macos-arm64)
-              cmake .. \
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=macos \
                 -DCMAKE_SYSTEM_PROCESSOR=arm64 \

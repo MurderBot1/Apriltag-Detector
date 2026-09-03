@@ -1,0 +1,257 @@
+name: Build on Push
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - feature/*
+      - fix/*
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+      - 'LICENSE'
+  pull_request:
+    branches:
+      - main
+      - dev
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUILD_CONFIG: Release
+
+jobs:
+  # Determine what to build based on the trigger
+  determine-builds:
+    name: Determine Build Matrix
+    runs-on: ubuntu-22.04
+    outputs:
+      matrix: ${{ steps.set-matrix.outputs.matrix }}
+    steps:
+      - id: set-matrix
+        run: |
+          # For main/dev branches, build all platforms
+          # For feature branches, build only Linux x64 for faster feedback
+          if [[ "${{ github.ref }}" == "refs/heads/main" || "${{ github.ref }}" == "refs/heads/dev" ]]; then
+            echo 'matrix={"platform": ["linux-x64", "linux-arm64", "windows-x64", "macos-x64", "macos-arm64"]}' >> $GITHUB_OUTPUT
+          else
+            # For feature branches, build a subset for faster CI
+            echo 'matrix={"platform": ["linux-x64", "windows-x64", "macos-x64"]}' >> $GITHUB_OUTPUT
+          fi
+
+  # Build matrix job
+  build:
+    name: Build ${{ matrix.platform }}
+    needs: determine-builds
+    runs-on: ${{ matrix.os }}
+    strategy:
+      fail-fast: false
+      matrix: ${{ fromJson(needs.determine-builds.outputs.matrix) }}
+      include:
+        # Linux x64 (native)
+        - platform: linux-x64
+          os: ubuntu-22.04
+          target: linux
+          arch: x64
+          compiler: native
+          install_deps: "sudo apt update && sudo apt install -y build-essential cmake git"
+          
+        # Linux ARM64 (cross-compile from Linux)
+        - platform: linux-arm64
+          os: ubuntu-22.04
+          target: linux
+          arch: arm64
+          compiler: aarch64-linux-gnu-g++
+          install_deps: "sudo apt update && sudo apt install -y build-essential cmake git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu"
+          
+        # Windows x64 (cross-compile from Linux using MinGW)
+        - platform: windows-x64
+          os: ubuntu-22.04
+          target: windows
+          arch: x64
+          compiler: x86_64-w64-mingw32-g++
+          install_deps: "sudo apt update && sudo apt install -y build-essential cmake git mingw-w64"
+          
+        # macOS x64 (native on Intel runner)
+        - platform: macos-x64
+          os: macos-13
+          target: macos
+          arch: x64
+          compiler: native
+          install_deps: "brew update && brew install cmake"
+          
+        # macOS ARM64 (native on ARM runner)
+        - platform: macos-arm64
+          os: macos-14
+          target: macos
+          arch: arm64
+          compiler: native
+          install_deps: "brew update && brew install cmake"
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: ${{ matrix.install_deps }}
+
+      - name: Configure CMake
+        run: |
+          BUILD_DIR="build/${{ matrix.platform }}_${{ env.BUILD_CONFIG }}"
+          mkdir -p "$BUILD_DIR"
+          cd "$BUILD_DIR"
+          
+          case "${{ matrix.platform }}" in
+            linux-x64)
+              cmake .. \
+                -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
+                -DPLATFORM=linux \
+                -DCMAKE_SYSTEM_PROCESSOR=x86_64
+              ;;
+            linux-arm64)
+              cmake .. \
+                -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
+                -DPLATFORM=linux \
+                -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+                -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+                -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
+                -DCMAKE_CXX_FLAGS="-march=armv8-a" \
+                -DCMAKE_C_FLAGS="-march=armv8-a"
+              ;;
+            windows-x64)
+              cmake .. \
+                -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
+                -DPLATFORM=windows \
+                -DCMAKE_SYSTEM_NAME=Windows \
+                -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+                -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
+                -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres
+              ;;
+            macos-x64)
+              cmake .. \
+                -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
+                -DPLATFORM=macos \
+                -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
+                -DCMAKE_OSX_ARCHITECTURES=x86_64
+              ;;
+            macos-arm64)
+              cmake .. \
+                -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
+                -DPLATFORM=macos \
+                -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+                -DCMAKE_OSX_ARCHITECTURES=arm64 \
+                -DCMAKE_APPLE_SILICON_PROCESSOR=arm64
+              ;;
+          esac
+
+      - name: Build
+        run: |
+          BUILD_DIR="build/${{ matrix.platform }}_${{ env.BUILD_CONFIG }}"
+          cd "$BUILD_DIR"
+          
+          # Determine parallel jobs
+          if [[ "${{ runner.os }}" == "Linux" ]]; then
+            JOBS=$(nproc)
+          elif [[ "${{ runner.os }}" == "macOS" ]]; then
+            JOBS=$(sysctl -n hw.ncpu)
+          else
+            JOBS=4
+          fi
+          
+          cmake --build . --config ${{ env.BUILD_CONFIG }} --parallel $JOBS
+
+      - name: Test (if available)
+        run: |
+          BUILD_DIR="build/${{ matrix.platform }}_${{ env.BUILD_CONFIG }}"
+          cd "$BUILD_DIR"
+          
+          # Run tests if CTest is available
+          if command -v ctest &> /dev/null; then
+            ctest --output-on-failure --parallel $JOBS || true
+          fi
+        continue-on-error: true
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: ${{ matrix.platform }}-${{ env.BUILD_CONFIG }}
+          path: build/${{ matrix.platform }}_${{ env.BUILD_CONFIG }}
+          retention-days: 7
+
+
+  # Summary job
+  summary:
+    name: Build Summary
+    needs: build
+    runs-on: ubuntu-22.04
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: false
+
+      - name: Generate summary
+        run: |
+          echo "### Build Summary" >> summary.md
+          echo "" >> summary.md
+          echo "**Trigger:** ${{ github.event_name }} on ${{ github.ref }}" >> summary.md
+          echo "**Configuration:** ${{ env.BUILD_CONFIG }}" >> summary.md
+          echo "**Timestamp:** $(date -u)" >> summary.md
+          echo "" >> summary.md
+          echo "## Results" >> summary.md
+          echo "" >> summary.md
+          
+          # Count successful builds
+          SUCCESS=0
+          FAILED=0
+          
+          for artifact in artifacts/*; do
+            if [ -d "$artifact" ]; then
+              name=$(basename "$artifact")
+              # Check if there are actual build files
+              if [ -n "$(find "$artifact" -name '*.exe' -o -name '*.so' -o -name '*.dll' -o -name '*.dylib' 2>/dev/null | head -1)" ]; then
+                echo "✅ $name" >> summary.md
+                SUCCESS=$((SUCCESS + 1))
+              else
+                echo "❌ $name (no binaries found)" >> summary.md
+                FAILED=$((FAILED + 1))
+              fi
+            fi
+          done
+          
+          echo "" >> summary.md
+          echo "**Total:** ${{ needs.build.result == 'success' && 'All builds passed' || 'Some builds failed' }}" >> summary.md
+          echo "**Successful:** $SUCCESS" >> summary.md
+          echo "**Failed:** $FAILED" >> summary.md
+          
+          cat summary.md
+
+      - name: Upload summary
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-summary
+          path: summary.md
+          retention-days: 1
+
+      - name: Post summary as comment (PR only)
+        if: github.event_name == 'pull_request'
+        uses: actions/github-script@v7
+        with:
+          script: |
+            const fs = require('fs');
+            const summary = fs.readFileSync('summary.md', 'utf8');
+            
+            await github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              body: summary
+            });

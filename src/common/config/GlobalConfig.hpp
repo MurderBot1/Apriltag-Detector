@@ -81,5 +81,10 @@ namespace GlobalConfig {
      * @param path New configuration file path
      */
     void setConfigPath(const std::string& path);
+
+    /**
+     * @brief Notify all registered callbacks of configuration changes
+     */
+    void notifyCallbacks();
     
 } // namespace GlobalConfig

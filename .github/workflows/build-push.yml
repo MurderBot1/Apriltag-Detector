@@ -109,13 +109,13 @@ jobs:
           
           case "${{ matrix.platform }}" in
             linux-x64)
-              cmake .. \
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=linux \
                 -DCMAKE_SYSTEM_PROCESSOR=x86_64
               ;;
             linux-arm64)
-              cmake .. \
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=linux \
                 -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
@@ -125,7 +125,7 @@ jobs:
                 -DCMAKE_C_FLAGS="-march=armv8-a"
               ;;
             windows-x64)
-              cmake .. \
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=windows \
                 -DCMAKE_SYSTEM_NAME=Windows \
@@ -134,14 +134,14 @@ jobs:
                 -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres
               ;;
             macos-x64)
-              cmake .. \
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=macos \
                 -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
                 -DCMAKE_OSX_ARCHITECTURES=x86_64
               ;;
             macos-arm64)
-              cmake .. \
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=macos \
                 -DCMAKE_SYSTEM_PROCESSOR=arm64 \

@@ -40,7 +40,7 @@ jobs:
         run: |
           mkdir -p build/linux_x64_${{ env.BUILD_CONFIG }}
           cd build/linux_x64_${{ env.BUILD_CONFIG }}
-          cmake .. -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} -DPLATFORM=linux -DCMAKE_SYSTEM_PROCESSOR=x86_64
+          cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} -DPLATFORM=linux -DCMAKE_SYSTEM_PROCESSOR=x86_64
 
       - name: Build Linux x64
         run: |
@@ -74,7 +74,7 @@ jobs:
         run: |
           mkdir -p build/linux_arm64_${{ env.BUILD_CONFIG }}
           cd build/linux_arm64_${{ env.BUILD_CONFIG }}
-          cmake .. \
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=linux \
             -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
@@ -115,7 +115,7 @@ jobs:
         run: |
           mkdir -p build/linux_arm_${{ env.BUILD_CONFIG }}
           cd build/linux_arm_${{ env.BUILD_CONFIG }}
-          cmake .. \
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=linux \
             -DCMAKE_SYSTEM_PROCESSOR=arm \
@@ -156,7 +156,7 @@ jobs:
         run: |
           mkdir -p build/windows_x64_${{ env.BUILD_CONFIG }}
           cd build/windows_x64_${{ env.BUILD_CONFIG }}
-          cmake .. \
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=windows \
             -DCMAKE_SYSTEM_NAME=Windows \
@@ -196,7 +196,7 @@ jobs:
         run: |
           mkdir -p build/windows_arm64_${{ env.BUILD_CONFIG }}
           cd build/windows_arm64_${{ env.BUILD_CONFIG }}
-          cmake .. \
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=windows \
             -DCMAKE_SYSTEM_NAME=Windows \
@@ -236,7 +236,7 @@ jobs:
         run: |
           mkdir -p build/macos_x64_${{ env.BUILD_CONFIG }}
           cd build/macos_x64_${{ env.BUILD_CONFIG }}
-          cmake .. \
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=macos \
             -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
@@ -274,7 +274,7 @@ jobs:
         run: |
           mkdir -p build/macos_arm64_${{ env.BUILD_CONFIG }}
           cd build/macos_arm64_${{ env.BUILD_CONFIG }}
-          cmake .. \
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=macos \
             -DCMAKE_SYSTEM_PROCESSOR=arm64 \

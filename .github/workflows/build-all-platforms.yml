@@ -1,0 +1,422 @@
+name: Build All Platforms
+
+on:
+  push:
+    branches:
+      - main
+      - dev
+      - release/*
+    tags:
+      - v*
+  pull_request:
+    branches:
+      - main
+      - dev
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  BUILD_CONFIG: Release
+
+jobs:
+  # Build on Linux for x64
+  build-linux-x64:
+    name: Linux x64
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake git
+
+      - name: Configure CMake for Linux x64
+        run: |
+          mkdir -p build/linux_x64_${{ env.BUILD_CONFIG }}
+          cd build/linux_x64_${{ env.BUILD_CONFIG }}
+          cmake .. -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} -DPLATFORM=linux -DCMAKE_SYSTEM_PROCESSOR=x86_64
+
+      - name: Build Linux x64
+        run: |
+          cd build/linux_x64_${{ env.BUILD_CONFIG }}
+          cmake --build . --config ${{ env.BUILD_CONFIG }} --parallel $(nproc)
+
+      - name: Upload Linux x64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-x64-${{ env.BUILD_CONFIG }}
+          path: build/linux_x64_${{ env.BUILD_CONFIG }}
+          retention-days: 7
+
+
+  # Build on Linux for ARM64
+  build-linux-arm64:
+    name: Linux ARM64
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install ARM64 cross-compilation toolchain
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu
+
+      - name: Configure CMake for Linux ARM64
+        run: |
+          mkdir -p build/linux_arm64_${{ env.BUILD_CONFIG }}
+          cd build/linux_arm64_${{ env.BUILD_CONFIG }}
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
+            -DPLATFORM=linux \
+            -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
+            -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
+            -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
+            -DCMAKE_CXX_FLAGS="-march=armv8-a" \
+            -DCMAKE_C_FLAGS="-march=armv8-a"
+
+      - name: Build Linux ARM64
+        run: |
+          cd build/linux_arm64_${{ env.BUILD_CONFIG }}
+          cmake --build . --config ${{ env.BUILD_CONFIG }} --parallel $(nproc)
+
+      - name: Upload Linux ARM64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm64-${{ env.BUILD_CONFIG }}
+          path: build/linux_arm64_${{ env.BUILD_CONFIG }}
+          retention-days: 7
+
+
+  # Build on Linux for ARM (32-bit)
+  build-linux-arm:
+    name: Linux ARM
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install ARM cross-compilation toolchain
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake git gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf
+
+      - name: Configure CMake for Linux ARM
+        run: |
+          mkdir -p build/linux_arm_${{ env.BUILD_CONFIG }}
+          cd build/linux_arm_${{ env.BUILD_CONFIG }}
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
+            -DPLATFORM=linux \
+            -DCMAKE_SYSTEM_PROCESSOR=arm \
+            -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
+            -DCMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++ \
+            -DCMAKE_CXX_FLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard" \
+            -DCMAKE_C_FLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard"
+
+      - name: Build Linux ARM
+        run: |
+          cd build/linux_arm_${{ env.BUILD_CONFIG }}
+          cmake --build . --config ${{ env.BUILD_CONFIG }} --parallel $(nproc)
+
+      - name: Upload Linux ARM artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: linux-arm-${{ env.BUILD_CONFIG }}
+          path: build/linux_arm_${{ env.BUILD_CONFIG }}
+          retention-days: 7
+
+
+  # Build for Windows x64 using MinGW cross-compilation
+  build-windows-x64:
+    name: Windows x64
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install MinGW-w64 toolchain
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake git mingw-w64
+
+      - name: Configure CMake for Windows x64
+        run: |
+          mkdir -p build/windows_x64_${{ env.BUILD_CONFIG }}
+          cd build/windows_x64_${{ env.BUILD_CONFIG }}
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
+            -DPLATFORM=windows \
+            -DCMAKE_SYSTEM_NAME=Windows \
+            -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
+            -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
+            -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres
+
+      - name: Build Windows x64
+        run: |
+          cd build/windows_x64_${{ env.BUILD_CONFIG }}
+          cmake --build . --config ${{ env.BUILD_CONFIG }} --parallel $(nproc)
+
+      - name: Upload Windows x64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-x64-${{ env.BUILD_CONFIG }}
+          path: build/windows_x64_${{ env.BUILD_CONFIG }}
+          retention-days: 7
+
+
+  # Build for Windows ARM64 using MinGW cross-compilation
+  build-windows-arm64:
+    name: Windows ARM64
+    runs-on: ubuntu-22.04
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install MinGW-w64 ARM64 toolchain
+        run: |
+          sudo apt update
+          sudo apt install -y build-essential cmake git mingw-w64
+
+      - name: Configure CMake for Windows ARM64
+        run: |
+          mkdir -p build/windows_arm64_${{ env.BUILD_CONFIG }}
+          cd build/windows_arm64_${{ env.BUILD_CONFIG }}
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
+            -DPLATFORM=windows \
+            -DCMAKE_SYSTEM_NAME=Windows \
+            -DCMAKE_C_COMPILER=aarch64-w64-mingw32-gcc \
+            -DCMAKE_CXX_COMPILER=aarch64-w64-mingw32-g++ \
+            -DCMAKE_RC_COMPILER=aarch64-w64-mingw32-windres
+
+      - name: Build Windows ARM64
+        run: |
+          cd build/windows_arm64_${{ env.BUILD_CONFIG }}
+          cmake --build . --config ${{ env.BUILD_CONFIG }} --parallel $(nproc)
+
+      - name: Upload Windows ARM64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: windows-arm64-${{ env.BUILD_CONFIG }}
+          path: build/windows_arm64_${{ env.BUILD_CONFIG }}
+          retention-days: 7
+
+
+  # Build for macOS x64 (Intel)
+  build-macos-x64:
+    name: macOS x64
+    runs-on: macos-13
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install cmake
+
+      - name: Configure CMake for macOS x64
+        run: |
+          mkdir -p build/macos_x64_${{ env.BUILD_CONFIG }}
+          cd build/macos_x64_${{ env.BUILD_CONFIG }}
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
+            -DPLATFORM=macos \
+            -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
+            -DCMAKE_OSX_ARCHITECTURES=x86_64
+
+      - name: Build macOS x64
+        run: |
+          cd build/macos_x64_${{ env.BUILD_CONFIG }}
+          cmake --build . --config ${{ env.BUILD_CONFIG }} --parallel $(sysctl -n hw.ncpu)
+
+      - name: Upload macOS x64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-x64-${{ env.BUILD_CONFIG }}
+          path: build/macos_x64_${{ env.BUILD_CONFIG }}
+          retention-days: 7
+
+
+  # Build for macOS ARM64 (Apple Silicon)
+  build-macos-arm64:
+    name: macOS ARM64
+    runs-on: macos-14
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: |
+          brew update
+          brew install cmake
+
+      - name: Configure CMake for macOS ARM64
+        run: |
+          mkdir -p build/macos_arm64_${{ env.BUILD_CONFIG }}
+          cd build/macos_arm64_${{ env.BUILD_CONFIG }}
+          cmake .. \
+            -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
+            -DPLATFORM=macos \
+            -DCMAKE_SYSTEM_PROCESSOR=arm64 \
+            -DCMAKE_OSX_ARCHITECTURES=arm64 \
+            -DCMAKE_APPLE_SILICON_PROCESSOR=arm64
+
+      - name: Build macOS ARM64
+        run: |
+          cd build/macos_arm64_${{ env.BUILD_CONFIG }}
+          cmake --build . --config ${{ env.BUILD_CONFIG }} --parallel $(sysctl -n hw.ncpu)
+
+      - name: Upload macOS ARM64 artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: macos-arm64-${{ env.BUILD_CONFIG }}
+          path: build/macos_arm64_${{ env.BUILD_CONFIG }}
+          retention-days: 7
+
+
+  # Summary job to collect all artifacts
+  summary:
+    name: Build Summary
+    needs:
+      - build-linux-x64
+      - build-linux-arm64
+      - build-linux-arm
+      - build-windows-x64
+      - build-windows-arm64
+      - build-macos-x64
+      - build-macos-arm64
+    runs-on: ubuntu-22.04
+    if: always()
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+          merge-multiple: false
+
+      - name: List all artifacts
+        run: |
+          echo "### Build Summary"
+          echo ""
+          for dir in artifacts/*; do
+            if [ -d "$dir" ]; then
+              dirname=$(basename "$dir")
+              if [ -d "$dir" ]; then
+                echo "✅ $dirname"
+              else
+                echo "❌ $dirname"
+              fi
+            fi
+          done
+
+      - name: Create summary report
+        run: |
+          echo "### AprilTag Detector Build Report" > build_report.md
+          echo "" >> build_report.md
+          echo "**Build Configuration:** ${{ env.BUILD_CONFIG }}" >> build_report.md
+          echo "**Trigger:** ${{ github.event_name }} on ${{ github.ref }}" >> build_report.md
+          echo "**Timestamp:** $(date -u)" >> build_report.md
+          echo "" >> build_report.md
+          echo "## Build Results" >> build_report.md
+          echo "" >> build_report.md
+          
+          for job in linux-x64 linux-arm64 linux-arm windows-x64 windows-arm64 macos-x64 macos-arm64; do
+            if [ -d "artifacts/${job}-${{ env.BUILD_CONFIG }}" ]; then
+              echo "- ✅ **$job**: Success" >> build_report.md
+            else
+              echo "- ❌ **$job**: Failed or Skipped" >> build_report.md
+            fi
+          done
+          
+          echo "" >> build_report.md
+          echo "## Artifacts" >> build_report.md
+          echo "" >> build_report.md
+          echo "All build artifacts are available for download in the GitHub Actions artifacts section." >> build_report.md
+          
+          cat build_report.md
+
+      - name: Upload build report
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-report
+          path: build_report.md
+          retention-days: 7
+
+
+  # Release job (only runs on tag pushes)
+  release:
+    name: Create Release
+    needs: summary
+    runs-on: ubuntu-22.04
+    if: startsWith(github.ref, 'refs/tags/v')
+    steps:
+      - name: Download all artifacts
+        uses: actions/download-artifact@v4
+        with:
+          path: release-artifacts
+          merge-multiple: true
+
+      - name: Create release archives
+        run: |
+          mkdir -p release
+          
+          # Create tar.gz archives for each platform
+          for platform in linux windows macos; do
+            for arch in x64 arm64 arm; do
+              src_dir="release-artifacts/${platform}_${arch}_${{ env.BUILD_CONFIG }}"
+              if [ -d "$src_dir" ]; then
+                tar -czf "release/apriltag-detector-${platform}-${arch}-${{ env.BUILD_CONFIG }}.tar.gz" -C "$src_dir" .
+              fi
+            done
+          done
+          
+          # List created archives
+          ls -lh release/
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: |
+            release/*.tar.gz
+          name: AprilTag Detector v${{ github.ref_name }}
+          body: |
+            ## AprilTag Detector ${{ github.ref_name }}
+            
+            Pre-built binaries for multiple platforms and architectures.
+            
+            ### Downloads
+            - **Linux x64**: apriltag-detector-linux-x64-${{ env.BUILD_CONFIG }}.tar.gz
+            - **Linux ARM64**: apriltag-detector-linux-arm64-${{ env.BUILD_CONFIG }}.tar.gz
+            - **Linux ARM**: apriltag-detector-linux-arm-${{ env.BUILD_CONFIG }}.tar.gz
+            - **Windows x64**: apriltag-detector-windows-x64-${{ env.BUILD_CONFIG }}.tar.gz
+            - **Windows ARM64**: apriltag-detector-windows-arm64-${{ env.BUILD_CONFIG }}.tar.gz
+            - **macOS x64**: apriltag-detector-macos-x64-${{ env.BUILD_CONFIG }}.tar.gz
+            - **macOS ARM64**: apriltag-detector-macos-arm64-${{ env.BUILD_CONFIG }}.tar.gz
+            
+            ### Build Configuration
+            - **Type**: ${{ env.BUILD_CONFIG }}
+            - **Commit**: ${{ github.sha }}
+          draft: false
+          prerelease: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

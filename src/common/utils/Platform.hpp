@@ -60,6 +60,15 @@ namespace Platform {
         #endif
     }
     
+    // Process ID
+    long long getCurrentProcessId() {
+        #if PLATFORM_WINDOWS
+            return static_cast<long long>(GetCurrentProcessId());
+        #else
+            return static_cast<long long>(getpid());
+        #endif
+    }
+    
     // Dynamic library extension
     constexpr const char* getLibraryExtension() {
         #if PLATFORM_WINDOWS

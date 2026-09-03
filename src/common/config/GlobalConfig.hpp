@@ -50,7 +50,7 @@ namespace GlobalConfig {
      * @brief Get current configuration as JSON string
      * @return JSON string representation of global configuration
      */
-    std::string toJson() const;
+    std::string toJson();
     
     /**
      * @brief Update configuration from JSON string

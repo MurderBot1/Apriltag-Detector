@@ -99,7 +99,7 @@ LimelightFMapLoader::FieldMap LimelightFMapLoader::loadFMapFromString(const std:
         LOG_INFO_F("Loaded FMap '%s' with %zu tags", 
                    fieldMap.name.c_str(), fieldMap.tags.size());
         
-    } catch (const json::exception& e) {
+    } catch (const nlohmann::json_exception& e) {
         LOG_ERROR_F("Failed to parse FMap JSON: %s", e.what());
     } catch (const std::exception& e) {
         LOG_ERROR_F("Error loading FMap: %s", e.what());

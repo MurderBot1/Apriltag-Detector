@@ -79,52 +79,52 @@ jobs:
           
           case "${{ matrix.platform }}" in
             linux-x64)
-              cmake .. \
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=linux \
                 -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
                 -DCMAKE_INSTALL_PREFIX=install
               ;;
             linux-arm64)
-              cmake .. \
+              export CC=aarch64-linux-gnu-gcc
+              export CXX=aarch64-linux-gnu-g++
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=linux \
                 -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
-                -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
-                -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
                 -DCMAKE_CXX_FLAGS="-march=armv8-a" \
                 -DCMAKE_C_FLAGS="-march=armv8-a" \
                 -DCMAKE_INSTALL_PREFIX=install
               ;;
             linux-arm)
-              cmake .. \
+              export CC=arm-linux-gnueabihf-gcc
+              export CXX=arm-linux-gnueabihf-g++
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=linux \
                 -DCMAKE_SYSTEM_PROCESSOR=arm \
-                -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
-                -DCMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++ \
                 -DCMAKE_CXX_FLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard" \
                 -DCMAKE_C_FLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard" \
                 -DCMAKE_INSTALL_PREFIX=install
               ;;
             windows-x64)
-              cmake .. \
+              export CC=x86_64-w64-mingw32-gcc
+              export CXX=x86_64-w64-mingw32-g++
+              export RC=x86_64-w64-mingw32-windres
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=windows \
                 -DCMAKE_SYSTEM_NAME=Windows \
-                -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
-                -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
-                -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres \
                 -DCMAKE_INSTALL_PREFIX=install
               ;;
             windows-arm64)
-              cmake .. \
+              export CC=aarch64-w64-mingw32-gcc
+              export CXX=aarch64-w64-mingw32-g++
+              export RC=aarch64-w64-mingw32-windres
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=windows \
                 -DCMAKE_SYSTEM_NAME=Windows \
-                -DCMAKE_C_COMPILER=aarch64-w64-mingw32-gcc \
-                -DCMAKE_CXX_COMPILER=aarch64-w64-mingw32-g++ \
-                -DCMAKE_RC_COMPILER=aarch64-w64-mingw32-windres \
                 -DCMAKE_INSTALL_PREFIX=install
               ;;
           esac
@@ -186,7 +186,7 @@ jobs:
           BUILD_DIR="build/release/macos-x64"
           mkdir -p "$BUILD_DIR"
           cd "$BUILD_DIR"
-          cmake .. \
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=macos \
             -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
@@ -241,7 +241,7 @@ jobs:
           BUILD_DIR="build/release/macos-arm64"
           mkdir -p "$BUILD_DIR"
           cd "$BUILD_DIR"
-          cmake .. \
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=macos \
             -DCMAKE_SYSTEM_PROCESSOR=arm64 \

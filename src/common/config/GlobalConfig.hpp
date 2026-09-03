@@ -50,7 +50,7 @@ namespace GlobalConfig {
      * @brief Get current configuration as JSON string
      * @return JSON string representation of global configuration
      */
-    std::string toJson() const;
+    std::string toJson();
     
     /**
      * @brief Update configuration from JSON string
@@ -81,5 +81,10 @@ namespace GlobalConfig {
      * @param path New configuration file path
      */
     void setConfigPath(const std::string& path);
+
+    /**
+     * @brief Notify all registered callbacks of configuration changes
+     */
+    void notifyCallbacks();
     
 } // namespace GlobalConfig

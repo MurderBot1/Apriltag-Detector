@@ -25,9 +25,9 @@ env:
   BUILD_CONFIG: ${{ github.event.inputs.build_config || 'Release' }}
 
 jobs:
-  # Nightly build for all platforms
+  # Nightly build for Linux platforms
   nightly-build:
-    name: Nightly Build - All Platforms
+    name: Nightly Build - Linux Platforms
     runs-on: ubuntu-22.04
     strategy:
       fail-fast: false
@@ -36,48 +36,24 @@ jobs:
           - linux-x64
           - linux-arm64
           - linux-arm
-          - windows-x64
-          - windows-arm64
         include:
           # Linux x64 (native)
           - platform: linux-x64
             target: linux
             arch: x64
-            os: ubuntu-22.04
             install_deps: "sudo apt update && sudo apt install -y build-essential cmake git"
-            compiler: native
             
           # Linux ARM64 (cross-compile)
           - platform: linux-arm64
             target: linux
             arch: arm64
-            os: ubuntu-22.04
             install_deps: "sudo apt update && sudo apt install -y build-essential cmake git gcc-aarch64-linux-gnu g++-aarch64-linux-gnu"
-            compiler: aarch64-linux-gnu-g++
             
           # Linux ARM (cross-compile)
           - platform: linux-arm
             target: linux
             arch: arm
-            os: ubuntu-22.04
             install_deps: "sudo apt update && sudo apt install -y build-essential cmake git gcc-arm-linux-gnueabihf g++-arm-linux-gnueabihf"
-            compiler: arm-linux-gnueabihf-g++
-            
-          # Windows x64 (cross-compile)
-          - platform: windows-x64
-            target: windows
-            arch: x64
-            os: ubuntu-22.04
-            install_deps: "sudo apt update && sudo apt install -y build-essential cmake git mingw-w64"
-            compiler: x86_64-w64-mingw32-g++
-            
-          # Windows ARM64 (cross-compile)
-          - platform: windows-arm64
-            target: windows
-            arch: arm64
-            os: ubuntu-22.04
-            install_deps: "sudo apt update && sudo apt install -y build-essential cmake git mingw-w64"
-            compiler: aarch64-w64-mingw32-g++
     
     steps:
       - name: Checkout repository
@@ -96,48 +72,98 @@ jobs:
           
           case "${{ matrix.platform }}" in
             linux-x64)
-              cmake .. \
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=linux \
                 -DCMAKE_SYSTEM_PROCESSOR=x86_64
               ;;
             linux-arm64)
-              cmake .. \
+              export CC=aarch64-linux-gnu-gcc
+              export CXX=aarch64-linux-gnu-g++
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=linux \
                 -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
-                -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
-                -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
                 -DCMAKE_CXX_FLAGS="-march=armv8-a" \
                 -DCMAKE_C_FLAGS="-march=armv8-a"
               ;;
             linux-arm)
-              cmake .. \
+              export CC=arm-linux-gnueabihf-gcc
+              export CXX=arm-linux-gnueabihf-g++
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=linux \
                 -DCMAKE_SYSTEM_PROCESSOR=arm \
-                -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
-                -DCMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++ \
                 -DCMAKE_CXX_FLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard" \
                 -DCMAKE_C_FLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard"
               ;;
+          esac
+
+      - name: Build
+        run: |
+          BUILD_DIR="build/nightly/${{ matrix.platform }}_${{ env.BUILD_CONFIG }}"
+          cd "$BUILD_DIR"
+          cmake --build . --config ${{ env.BUILD_CONFIG }} --parallel $(nproc)
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: nightly-${{ matrix.platform }}-${{ env.BUILD_CONFIG }}
+          path: build/nightly/${{ matrix.platform }}_${{ env.BUILD_CONFIG }}
+          retention-days: 30
+
+
+  # Windows builds (separate job due to different toolchain)
+  nightly-windows:
+    name: Nightly Build - Windows Platforms
+    runs-on: ubuntu-22.04
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - windows-x64
+          - windows-arm64
+        include:
+          - platform: windows-x64
+            arch: x64
+            install_deps: "sudo apt update && sudo apt install -y build-essential cmake git mingw-w64"
+          - platform: windows-arm64
+            arch: arm64
+            install_deps: "sudo apt update && sudo apt install -y build-essential cmake git mingw-w64"
+    
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          submodules: recursive
+
+      - name: Install dependencies
+        run: ${{ matrix.install_deps }}
+
+      - name: Configure CMake
+        run: |
+          BUILD_DIR="build/nightly/${{ matrix.platform }}_${{ env.BUILD_CONFIG }}"
+          mkdir -p "$BUILD_DIR"
+          cd "$BUILD_DIR"
+          
+          case "${{ matrix.platform }}" in
             windows-x64)
-              cmake .. \
+              export CC=x86_64-w64-mingw32-gcc
+              export CXX=x86_64-w64-mingw32-g++
+              export RC=x86_64-w64-mingw32-windres
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=windows \
-                -DCMAKE_SYSTEM_NAME=Windows \
-                -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
-                -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
-                -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres
+                -DCMAKE_SYSTEM_NAME=Windows
               ;;
             windows-arm64)
-              cmake .. \
+              export CC=aarch64-w64-mingw32-gcc
+              export CXX=aarch64-w64-mingw32-g++
+              export RC=aarch64-w64-mingw32-windres
+              cmake $GITHUB_WORKSPACE \
                 -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
                 -DPLATFORM=windows \
-                -DCMAKE_SYSTEM_NAME=Windows \
-                -DCMAKE_C_COMPILER=aarch64-w64-mingw32-gcc \
-                -DCMAKE_CXX_COMPILER=aarch64-w64-mingw32-g++ \
-                -DCMAKE_RC_COMPILER=aarch64-w64-mingw32-windres
+                -DCMAKE_SYSTEM_NAME=Windows
               ;;
           esac
 
@@ -175,7 +201,7 @@ jobs:
           BUILD_DIR="build/nightly/macos_x64_${{ env.BUILD_CONFIG }}"
           mkdir -p "$BUILD_DIR"
           cd "$BUILD_DIR"
-          cmake .. \
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=macos \
             -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
@@ -214,7 +240,7 @@ jobs:
           BUILD_DIR="build/nightly/macos_arm64_${{ env.BUILD_CONFIG }}"
           mkdir -p "$BUILD_DIR"
           cd "$BUILD_DIR"
-          cmake .. \
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=macos \
             -DCMAKE_SYSTEM_PROCESSOR=arm64 \
@@ -240,6 +266,7 @@ jobs:
     name: Nightly Build Summary
     needs:
       - nightly-build
+      - nightly-windows
       - nightly-macos-x64
       - nightly-macos-arm64
     runs-on: ubuntu-22.04

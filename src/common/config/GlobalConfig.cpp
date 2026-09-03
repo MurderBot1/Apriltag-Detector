@@ -1,9 +1,10 @@
 #include "GlobalConfig.hpp"
-#include "FileSystem.hpp"
+#include "../utils/FileSystem.hpp"
 #include "../utils/Platform.hpp"
 #include <nlohmann/json.hpp>
 #include <vector>
 #include <mutex>
+#include <unistd.h>
 
 using json = nlohmann::json;
 
@@ -80,7 +81,7 @@ namespace GlobalConfig {
             // Notify callbacks
             notifyCallbacks();
             
-        } catch (const json::exception& e) {
+        } catch (const nlohmann::json_exception& e) {
             // Parse error - keep current values
             // In production, log this error
         } catch (...) {
@@ -88,7 +89,7 @@ namespace GlobalConfig {
         }
     }
     
-    std::string toJson() const {
+    std::string toJson() {
         json result;
         result["tag_family"] = TAG_FAMILY;
         result["default_tag_size"] = TAG_SIZE;
@@ -140,7 +141,7 @@ namespace GlobalConfig {
             // Notify callbacks
             notifyCallbacks();
             
-        } catch (const json::exception& e) {
+        } catch (const nlohmann::json_exception& e) {
             // Parse error
         } catch (...) {
             // Other error
@@ -154,9 +155,13 @@ namespace GlobalConfig {
     
     void unregisterChangeCallback(ConfigChangeCallback callback) {
         std::lock_guard<std::mutex> lock(s_callbackMutex);
-        auto it = std::find(s_changeCallbacks.begin(), s_changeCallbacks.end(), callback);
-        if (it != s_changeCallbacks.end()) {
-            s_changeCallbacks.erase(it);
+        // Find callback by comparing target (std::function doesn't support ==)
+        for (auto it = s_changeCallbacks.begin(); it != s_changeCallbacks.end(); ++it) {
+            if (it->target_type() == callback.target_type() && 
+                it->target<void()>() == callback.target<void()>()) {
+                s_changeCallbacks.erase(it);
+                break;
+            }
         }
     }
     

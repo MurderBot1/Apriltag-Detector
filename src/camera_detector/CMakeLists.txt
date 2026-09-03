@@ -3,7 +3,7 @@
 set(DETECTOR_SOURCES
     main.cpp
     AprilTagDetector.cpp
-    DetectorConfig.cpp
+    DetectorConfig.hpp
 )
 
 add_executable(camera_detector ${DETECTOR_SOURCES})

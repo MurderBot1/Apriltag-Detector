@@ -40,7 +40,7 @@ LimelightFMapLoader::FieldMap LimelightFMapLoader::loadFMapFromString(const std:
         if (j.contains("field_size")) {
             json sizeJson = j["field_size"];
             if (sizeJson.is_array() && sizeJson.size() >= 2) {
-                fieldMap.fieldSize = {sizeJson[0].get<double>(), sizeJson[1].get<double>()};
+                fieldMap.fieldSize = std::vector<double>{sizeJson[0].get<double>(), sizeJson[1].get<double>()};
             }
         }
         
@@ -61,9 +61,9 @@ LimelightFMapLoader::FieldMap LimelightFMapLoader::loadFMapFromString(const std:
             std::string tagsKey = j.contains("tag_positions") ? "tag_positions" : "apriltags";
             json tagsObj = j[tagsKey];
             
-            for (auto it = tagsObj.begin(); it != tagsObj.end(); ++it) {
-                int tagId = std::stoi(it.key());
-                json tagJson = it.value();
+            for (auto it = tagsObj.object_begin(); it != tagsObj.object_end(); ++it) {
+                int tagId = std::stoi(it->first);
+                json tagJson = it->second;
                 
                 FMapTag tag;
                 tag.id = tagId;
@@ -99,7 +99,7 @@ LimelightFMapLoader::FieldMap LimelightFMapLoader::loadFMapFromString(const std:
         LOG_INFO_F("Loaded FMap '%s' with %zu tags", 
                    fieldMap.name.c_str(), fieldMap.tags.size());
         
-    } catch (const json::exception& e) {
+    } catch (const nlohmann::json_exception& e) {
         LOG_ERROR_F("Failed to parse FMap JSON: %s", e.what());
     } catch (const std::exception& e) {
         LOG_ERROR_F("Error loading FMap: %s", e.what());
@@ -116,7 +116,7 @@ bool LimelightFMapLoader::saveFMap(const FieldMap& fieldMap, const std::string& 
         j["description"] = fieldMap.description;
         j["field_size"] = fieldMap.fieldSize;
         
-        json tagsArray = json::array();
+        json tagsArray;
         for (const auto& pair : fieldMap.tags) {
             const FMapTag& tag = pair.second;
             json tagJson;
@@ -127,7 +127,7 @@ bool LimelightFMapLoader::saveFMap(const FieldMap& fieldMap, const std::string& 
             tagJson["rotation"] = tag.rotation;
             tagJson["size"] = tag.size;
             
-            tagsArray.push_back(tagJson);
+            tagsArray[pair.first] = tagJson;
         }
         
         j["tags"] = tagsArray;
@@ -176,7 +176,7 @@ LimelightFMapLoader::FieldMap LimelightFMapLoader::loadFRC2025Field() {
     FieldMap fieldMap;
     fieldMap.name = "FRC_2025_Reefscape";
     fieldMap.description = "FRC 2025 Reefscape Field";
-    fieldMap.fieldSize = {16.54, 8.21}; // Approximate field dimensions in meters
+    fieldMap.fieldSize = std::vector<double>{16.54, 8.21}; // Approximate field dimensions in meters
     
     // Tag layout for 2025 Reefscape
     // Note: These are approximate positions - verify with official field drawings
@@ -214,7 +214,7 @@ LimelightFMapLoader::FieldMap LimelightFMapLoader::loadFRC2024Field() {
     FieldMap fieldMap;
     fieldMap.name = "FRC_2024_Crescendo";
     fieldMap.description = "FRC 2024 Crescendo Field";
-    fieldMap.fieldSize = {16.46, 8.21}; // Field dimensions in meters
+    fieldMap.fieldSize = std::vector<double>{16.46, 8.21}; // Field dimensions in meters
     
     // Tag layout for 2024 Crescendo
     // Based on official field drawings
@@ -252,7 +252,7 @@ LimelightFMapLoader::FieldMap LimelightFMapLoader::loadFRC2023Field() {
     FieldMap fieldMap;
     fieldMap.name = "FRC_2023_ChargedUp";
     fieldMap.description = "FRC 2023 Charged Up Field";
-    fieldMap.fieldSize = {16.54, 8.02};
+    fieldMap.fieldSize = std::vector<double>{16.54, 8.02};
     
     // Tag layout for 2023 Charged Up
     std::vector<FMapTag> tags = {
@@ -292,7 +292,7 @@ LimelightFMapLoader::FieldMap LimelightFMapLoader::loadFRC2022Field() {
     FieldMap fieldMap;
     fieldMap.name = "FRC_2022_RapidReact";
     fieldMap.description = "FRC 2022 Rapid React Field";
-    fieldMap.fieldSize = {16.54, 8.02};
+    fieldMap.fieldSize = std::vector<double>{16.54, 8.02};
     
     // Tag layout for 2022 Rapid React
     std::vector<FMapTag> tags = {

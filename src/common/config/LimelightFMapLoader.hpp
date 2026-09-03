@@ -1,6 +1,7 @@
 #pragma once
 
 #include "ConfigManager.hpp"
+#include <nlohmann/json.hpp>
 #include <string>
 #include <map>
 #include <vector>

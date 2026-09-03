@@ -37,9 +37,7 @@ void Logger::initialize(const std::string& logDir, const std::string& processNam
     state.logDir = logDir;
     state.processName = processName;
     state.level = level;
-    state.processId = static_cast<int>(Platform::getPathSeparator() == '\\' ? 
-        static_cast<long long>(GetCurrentProcessId()) : 
-        static_cast<long long>(getpid()));
+    state.processId = static_cast<int>(Platform::getCurrentProcessId());
     
     // Create log directory structure: ./logs/<timestamp>/system/
     std::string timestampDir = FileSystem::getTimestampDirectoryName();

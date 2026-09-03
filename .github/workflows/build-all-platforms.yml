@@ -40,7 +40,7 @@ jobs:
         run: |
           mkdir -p build/linux_x64_${{ env.BUILD_CONFIG }}
           cd build/linux_x64_${{ env.BUILD_CONFIG }}
-          cmake .. -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} -DPLATFORM=linux -DCMAKE_SYSTEM_PROCESSOR=x86_64
+          cmake $GITHUB_WORKSPACE -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} -DPLATFORM=linux -DCMAKE_SYSTEM_PROCESSOR=x86_64
 
       - name: Build Linux x64
         run: |
@@ -74,12 +74,12 @@ jobs:
         run: |
           mkdir -p build/linux_arm64_${{ env.BUILD_CONFIG }}
           cd build/linux_arm64_${{ env.BUILD_CONFIG }}
-          cmake .. \
+          export CC=aarch64-linux-gnu-gcc
+          export CXX=aarch64-linux-gnu-g++
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=linux \
             -DCMAKE_SYSTEM_PROCESSOR=aarch64 \
-            -DCMAKE_C_COMPILER=aarch64-linux-gnu-gcc \
-            -DCMAKE_CXX_COMPILER=aarch64-linux-gnu-g++ \
             -DCMAKE_CXX_FLAGS="-march=armv8-a" \
             -DCMAKE_C_FLAGS="-march=armv8-a"
 
@@ -115,12 +115,12 @@ jobs:
         run: |
           mkdir -p build/linux_arm_${{ env.BUILD_CONFIG }}
           cd build/linux_arm_${{ env.BUILD_CONFIG }}
-          cmake .. \
+          export CC=arm-linux-gnueabihf-gcc
+          export CXX=arm-linux-gnueabihf-g++
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=linux \
             -DCMAKE_SYSTEM_PROCESSOR=arm \
-            -DCMAKE_C_COMPILER=arm-linux-gnueabihf-gcc \
-            -DCMAKE_CXX_COMPILER=arm-linux-gnueabihf-g++ \
             -DCMAKE_CXX_FLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard" \
             -DCMAKE_C_FLAGS="-march=armv7-a -mfpu=neon -mfloat-abi=hard"
 
@@ -156,13 +156,13 @@ jobs:
         run: |
           mkdir -p build/windows_x64_${{ env.BUILD_CONFIG }}
           cd build/windows_x64_${{ env.BUILD_CONFIG }}
-          cmake .. \
+          export CC=x86_64-w64-mingw32-gcc
+          export CXX=x86_64-w64-mingw32-g++
+          export RC=x86_64-w64-mingw32-windres
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=windows \
-            -DCMAKE_SYSTEM_NAME=Windows \
-            -DCMAKE_C_COMPILER=x86_64-w64-mingw32-gcc \
-            -DCMAKE_CXX_COMPILER=x86_64-w64-mingw32-g++ \
-            -DCMAKE_RC_COMPILER=x86_64-w64-mingw32-windres
+            -DCMAKE_SYSTEM_NAME=Windows
 
       - name: Build Windows x64
         run: |
@@ -196,13 +196,13 @@ jobs:
         run: |
           mkdir -p build/windows_arm64_${{ env.BUILD_CONFIG }}
           cd build/windows_arm64_${{ env.BUILD_CONFIG }}
-          cmake .. \
+          export CC=aarch64-w64-mingw32-gcc
+          export CXX=aarch64-w64-mingw32-g++
+          export RC=aarch64-w64-mingw32-windres
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=windows \
-            -DCMAKE_SYSTEM_NAME=Windows \
-            -DCMAKE_C_COMPILER=aarch64-w64-mingw32-gcc \
-            -DCMAKE_CXX_COMPILER=aarch64-w64-mingw32-g++ \
-            -DCMAKE_RC_COMPILER=aarch64-w64-mingw32-windres
+            -DCMAKE_SYSTEM_NAME=Windows
 
       - name: Build Windows ARM64
         run: |
@@ -236,7 +236,7 @@ jobs:
         run: |
           mkdir -p build/macos_x64_${{ env.BUILD_CONFIG }}
           cd build/macos_x64_${{ env.BUILD_CONFIG }}
-          cmake .. \
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=macos \
             -DCMAKE_SYSTEM_PROCESSOR=x86_64 \
@@ -274,7 +274,7 @@ jobs:
         run: |
           mkdir -p build/macos_arm64_${{ env.BUILD_CONFIG }}
           cd build/macos_arm64_${{ env.BUILD_CONFIG }}
-          cmake .. \
+          cmake $GITHUB_WORKSPACE \
             -DCMAKE_BUILD_TYPE=${{ env.BUILD_CONFIG }} \
             -DPLATFORM=macos \
             -DCMAKE_SYSTEM_PROCESSOR=arm64 \

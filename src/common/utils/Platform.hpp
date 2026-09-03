@@ -13,6 +13,7 @@
     #include <TargetConditionals.h>
 #elif defined(__linux__)
     #define PLATFORM_LINUX 1
+    #include <unistd.h>
 #endif
 
 // Architecture detection
@@ -57,6 +58,15 @@ namespace Platform {
             return '\\';
         #else
             return '/';
+        #endif
+    }
+    
+    // Process ID
+    long long getCurrentProcessId() {
+        #if PLATFORM_WINDOWS
+            return static_cast<long long>(GetCurrentProcessId());
+        #else
+            return static_cast<long long>(::getpid());
         #endif
     }
     

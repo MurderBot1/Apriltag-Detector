@@ -8,7 +8,7 @@ set(COMMON_SOURCES
     config/GlobalConfig.cpp
     config/ConfigManager.cpp
     config/ConfigWatcher.cpp
-    config/JsonConfig.cpp
+    config/LimelightFMapLoader.cpp
     
     # IPC
     ipc/ProcessManager.cpp
@@ -28,7 +28,6 @@ set(COMMON_SOURCES
     # Utils
     utils/FileSystem.cpp
     utils/TimeUtils.cpp
-    utils/Platform.cpp
 )
 
 # Platform-specific sources
@@ -61,7 +60,7 @@ target_include_directories(common PUBLIC
 
 # Link dependencies
 target_link_libraries(common PRIVATE
-    std::c++fs
+    stdc++fs
 )
 
 # Platform-specific linking

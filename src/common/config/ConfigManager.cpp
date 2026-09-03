@@ -1,7 +1,7 @@
 #include "ConfigManager.hpp"
 #include "LimelightFMapLoader.hpp"
 #include "../utils/FileSystem.hpp"
-#include "FileSystem.hpp"
+#include "../utils/FileSystem.hpp"
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -111,7 +111,7 @@ ConfigManager::SystemConfig ConfigManager::loadSystemConfig(const std::string& p
             }
         }
         
-    } catch (const json::exception& e) {
+    } catch (const nlohmann::json_exception& e) {
         // Parse error, return defaults
     } catch (...) {
         // Other error, return defaults
@@ -228,7 +228,7 @@ ConfigManager::CameraConfig ConfigManager::loadCameraConfig(int cameraId) {
             }
         }
         
-    } catch (const json::exception& e) {
+    } catch (const nlohmann::json_exception& e) {
         // Parse error, return defaults
     } catch (...) {
         // Other error, return defaults
@@ -289,7 +289,7 @@ std::map<int, ConfigManager::TagConfig> ConfigManager::loadTagConfig(const std::
             }
         }
         
-    } catch (const json::exception& e) {
+    } catch (const nlohmann::json_exception& e) {
         // Parse error
     } catch (...) {
         // Other error

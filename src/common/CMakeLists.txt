@@ -60,7 +60,7 @@ target_include_directories(common PUBLIC
 
 # Link dependencies
 target_link_libraries(common PRIVATE
-    std::c++fs
+    stdc++fs
 )
 
 # Platform-specific linking

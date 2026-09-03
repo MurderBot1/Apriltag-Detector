@@ -28,7 +28,6 @@ set(COMMON_SOURCES
     # Utils
     utils/FileSystem.cpp
     utils/TimeUtils.cpp
-    utils/Platform.cpp
 )
 
 # Platform-specific sources
